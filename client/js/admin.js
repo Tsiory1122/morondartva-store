@@ -1101,6 +1101,7 @@ const Admin = {
                     video.srcObject = stream;
                     video.play();
                     Notify.show('Caméra activée. Pointez vers le QR code.', 'info');
+                    this.scanFrame();
                 })
                 .catch(err => {
                     Notify.show('Erreur d\'accès à la caméra: ' + err.message, 'error');
@@ -1110,7 +1111,46 @@ const Admin = {
         }
     },
 
+    scanFrame() {
+        const video = document.getElementById('scanner-camera');
+        if (!video || !this.scannerStream) return;
+        if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+            this.scanRaf = requestAnimationFrame(() => this.scanFrame());
+            return;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+        if (code) {
+            try {
+                const parsed = JSON.parse(code.data);
+                if (parsed.qr_token) {
+                    document.getElementById('scanner-token-input').value = parsed.qr_token;
+                    this.stopScanner();
+                    this.scanTicket();
+                    return;
+                }
+            } catch (e) {
+                if (code.data.length > 5) {
+                    document.getElementById('scanner-token-input').value = code.data;
+                    this.stopScanner();
+                    this.scanTicket();
+                    return;
+                }
+            }
+        }
+        this.scanRaf = requestAnimationFrame(() => this.scanFrame());
+    },
+
     stopScanner() {
+        if (this.scanRaf) {
+            cancelAnimationFrame(this.scanRaf);
+            this.scanRaf = null;
+        }
         if (this.scannerStream) {
             this.scannerStream.getTracks().forEach(track => track.stop());
             this.scannerStream = null;
