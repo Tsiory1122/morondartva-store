@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morondartva-Store | Maison de Production & E-Commerce</title>
+    <meta name="description" content="Découvrez les productions audiovisuelles exclusives et la boutique de merchandising officielle de Morondartva. Films, courts-métrages et articles de mode.">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet (OpenStreetMap) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- CSS Stylesheet -->
+    <link rel="stylesheet" href="/client/css/styles.css?v=6">
+</head>
+<body>
+
+    <!-- --- HEADER & NAVIGATION --- -->
+    <header>
+        <div class="container header-container">
+            <!-- Brand Logo -->
+            <a href="#home" class="logo-container">
+                <img src="/client/assets/logo.jpg" alt="Morondartva Logo" class="logo-img" onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='inline';">
+                <span id="logo-fallback" style="display:none; color:var(--primary); font-weight:400; margin-right:8px; font-size:1.5em; line-height:1;">M</span>
+                <span class="logo-text">Morondartva<span class="logo-dot">&#9670;</span></span>
+            </a>
+
+            <!-- Navigation Links -->
+            <nav class="nav-links">
+                <a href="#home" class="nav-link active">Accueil</a>
+                <a href="#shop" class="nav-link">Boutique</a>
+                <a href="#videos" class="nav-link">Espace Vidéo</a>
+                <a href="#events" class="nav-link">Événements</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </nav>
+
+            <!-- Action Buttons (Cart, Auth, Admin) -->
+            <div class="nav-actions">
+                <!-- Shopping Cart Trigger -->
+                <button class="btn-icon" id="cart-icon" onclick="Shop.openCartDrawer()" title="Mon Panier">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count-badge hidden">0</span>
+                </button>
+
+                <!-- Guest Actions -->
+                <div id="nav-guest-menu">
+                    <button class="btn btn-red btn-sm" onclick="openAuthModal('login')">
+                        <i class="fas fa-sign-in-alt mr-1"></i> Connexion
+                    </button>
+                </div>
+
+                <!-- Logged User Actions -->
+                <div id="nav-user-menu" class="hidden d-flex align-items-center gap-2">
+                    <a href="#profile" class="d-flex align-items-center gap-2" title="Mon Espace">
+                        <i class="fas fa-user-circle fa-lg"></i>
+                        <span id="nav-user-fullname" class="text-sm font-bold text-truncate" style="max-width: 120px;">Utilisateur</span>
+                        <span id="nav-user-sub-badge" class="badge">Gratuit</span>
+                    </a>
+                    
+                    <!-- Admin Link (Hidden by default) -->
+                    <a href="#admin" id="nav-admin-link" class="btn btn-secondary btn-sm hidden" title="Back-Office">
+                        <i class="fas fa-cog mr-1"></i> Admin
+                    </a>
+
+                    <!-- Logout Button -->
+                    <button class="btn-icon text-muted" onclick="Auth.logout()" title="Se déconnecter">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Hamburger Trigger -->
+                <button class="btn-icon mobile-menu-trigger" onclick="App.toggleMobileNav()" title="Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Overlay -->
+        <div class="mobile-nav-overlay hidden" id="mobile-nav" onclick="App.toggleMobileNav()">
+            <div class="mobile-nav-panel" onclick="event.stopPropagation()">
+                <div class="mobile-nav-header">
+                    <span class="logo-text" style="font-size:1.4rem; background:linear-gradient(135deg,#fff,var(--primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Morondartva</span>
+                    <button class="btn-close text-white" onclick="App.toggleMobileNav()"><i class="fas fa-times"></i></button>
+                </div>
+                <nav class="mobile-nav-links">
+                    <a href="#home" class="mobile-nav-link active" onclick="App.toggleMobileNav()">Accueil</a>
+                    <a href="#shop" class="mobile-nav-link" onclick="App.toggleMobileNav()">Boutique</a>
+                    <a href="#videos" class="mobile-nav-link" onclick="App.toggleMobileNav()">Espace Vidéo</a>
+                    <a href="#events" class="mobile-nav-link" onclick="App.toggleMobileNav()">Événements</a>
+                    <a href="#profile" class="mobile-nav-link" onclick="App.toggleMobileNav()">Mon Profil</a>
+                    <a href="#contact" class="mobile-nav-link" onclick="App.toggleMobileNav()">Contact</a>
+                </nav>
+                <div class="mobile-nav-footer text-xs text-muted">
+                    &copy; 2026 Morondartva-Store
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- --- MAIN CONTENT SECTIONS --- -->
+    <main>
+        
+        <!-- ================= PAGE D'ACCUEIL ================= -->
+        <section id="section-home" class="pb-5">
+            <!-- Hero banner utilizing acceuil.jpg -->
+            <div class="hero-banner" style="background-image: url('/client/assets/acceuil.jpg');">
+                <div class="hero-overlay"></div>
+                <div class="container hero-content">
+                    <span class="badge badge-exclusive mb-2"><i class="fas fa-film mr-1"></i>Maison de Production</span>
+                    <h1 class="hero-title text-glow">L'Art & la Vision Audiovisuelle</h1>
+                    <p class="hero-subtitle">Plongez dans l'univers artistique de Morondartva. Explorez nos films exclusifs et portez notre identité à travers notre collection de vêtements haut de gamme.</p>
+                    <div class="d-flex gap-3">
+                        <a href="#videos" class="btn btn-red">Voir nos Vidéos</a>
+                        <a href="#shop" class="btn btn-secondary">Visiter la Boutique</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Featured Products -->
+            <div class="container mt-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="text-glow"><i class="fas fa-fire text-red mr-2"></i>Produits à la Une</h2>
+                    <a href="#shop" class="text-red text-sm font-bold">Tout voir <i class="fas fa-arrow-right ml-2"></i></a>
+                </div>
+                <div id="home-featured-products" class="grid grid-4 gap-3 grid-anim">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+
+            <!-- Featured Videos -->
+            <div class="container mt-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-star text-gold mr-2"></i>Dernières Sorties</h2>
+                    <a href="#videos" class="text-gold text-sm font-bold">Découvrir le Hub <i class="fas fa-arrow-right ml-2"></i></a>
+                </div>
+                <div id="home-featured-videos" class="grid grid-3 gap-3 grid-anim">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= BOUTIQUE (E-COMMERCE) ================= -->
+        <section id="section-shop" class="container py-5 hidden">
+            <h1 class="mb-4 text-glow"><i class="fas fa-shopping-bag text-red mr-2"></i>La Boutique Officielle</h1>
+            
+            <!-- Category and search controls -->
+            <div class="catalog-controls">
+                <div class="filter-btn-group" id="shop-categories-filter">
+                    <!-- Categories loaded dynamically -->
+                </div>
+                <div class="search-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="shop-search" class="search-input" placeholder="Rechercher un t-shirt, sweat...">
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+                <div id="products-grid" class="grid grid-4 gap-3 grid-anim">
+                <!-- Products loaded dynamically -->
+            </div>
+        </section>
+
+        <!-- ================= ESPACE VIDEO (STREAMING) ================= -->
+        <section id="section-videos" class="container py-5 hidden">
+            <h1 class="mb-4 text-glow"><i class="fas fa-film text-red mr-2"></i>Espace Streaming & Channels</h1>
+            
+            <!-- Category controls -->
+            <div class="catalog-controls">
+                <div class="filter-btn-group" id="videos-categories-filter">
+                    <!-- Categories loaded dynamically -->
+                </div>
+            </div>
+
+            <!-- Videos Grid -->
+            <div id="videos-grid" class="grid grid-3 gap-3 grid-anim">
+                <!-- Videos loaded dynamically -->
+            </div>
+        </section>
+
+        <!-- ================= ESPACE CLIENT (PROFILE) ================= -->
+        <section id="section-profile" class="hidden">
+            <!-- Rendered dynamically inside auth.js to handle guest/logged state -->
+        </section>
+
+        <!-- ================= ÉVÉNEMENTS (LABEL) ================= -->
+        <section id="section-events" class="container py-5 hidden">
+            <h1 class="mb-4 text-glow"><i class="fas fa-calendar-alt text-red mr-2"></i>Événements du Label</h1>
+            <div id="events-container">
+                <div class="text-center py-5"><div class="spinner"></div></div>
+            </div>
+        </section>
+
+        <!-- ================= CONTACT & INFO ================= -->
+        <section id="section-contact" class="container py-5 hidden">
+            <h1 class="mb-5 text-center text-glow section-title"><i class="fas fa-envelope text-red mr-2"></i>Contactez la Maison</h1>
+            
+            <!-- Contact methods row -->
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <a href="https://wa.me/261326180018" target="_blank" rel="noopener noreferrer" class="contact-action-card d-flex" style="background:linear-gradient(135deg, rgba(37,211,102,0.12), rgba(37,211,102,0.03)); border-color: rgba(37,211,102,0.2); height:100%;">
+                        <span class="contact-action-badge" style="background:#25d366;">
+                            <i class="fab fa-whatsapp"></i>
+                        </span>
+                        <span class="contact-action-body">
+                            <span class="contact-action-title">WhatsApp</span>
+                            <span class="contact-action-desc">Réponse sous 5 min</span>
+                            <span class="contact-action-link">+261 32 61 800 18 →</span>
+                        </span>
+                    </a>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <a href="https://t.me/morondartva" target="_blank" rel="noopener noreferrer" class="contact-action-card d-flex" style="background:linear-gradient(135deg, rgba(0,136,204,0.12), rgba(0,136,204,0.03)); border-color: rgba(0,136,204,0.2); height:100%;">
+                        <span class="contact-action-badge" style="background:#0088cc;">
+                            <i class="fab fa-telegram-plane"></i>
+                        </span>
+                        <span class="contact-action-body">
+                            <span class="contact-action-title">Telegram</span>
+                            <span class="contact-action-desc">Support prioritaire</span>
+                            <span class="contact-action-link">@morondartva →</span>
+                        </span>
+                    </a>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <a href="mailto:morondartva@gmail.com" target="_blank" rel="noopener noreferrer" class="contact-action-card d-flex" style="background:linear-gradient(135deg, rgba(201,0,0,0.1), rgba(201,0,0,0.02)); border-color: rgba(201,0,0,0.15); height:100%;">
+                        <span class="contact-action-badge" style="background:#c90000;">
+                            <i class="fas fa-envelope"></i>
+                        </span>
+                        <span class="contact-action-body">
+                            <span class="contact-action-title">E-mail</span>
+                            <span class="contact-action-desc">Réponse sous 24h</span>
+                            <span class="contact-action-link">morondartva@gmail.com →</span>
+                        </span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Form -->
+                <div class="col-md-8 mb-4">
+                    <div class="card bg-dark-card rounded border overflow-hidden">
+                        <div class="admin-form-header">
+                            <i class="fas fa-paper-plane"></i>
+                            <span>Envoyez-nous un message</span>
+                        </div>
+                        <form id="contact-form" class="p-4">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label"><i class="fas fa-user fa-fw text-muted mr-1"></i> Votre Nom *</label>
+                                    <input type="text" id="contact-name" class="form-control" placeholder="Ex: Jean Paul" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label"><i class="fas fa-envelope fa-fw text-muted mr-1"></i> Votre Adresse E-mail *</label>
+                                    <input type="email" id="contact-email" class="form-control" placeholder="Ex: client@domain.com" required>
+                                </div>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label"><i class="fas fa-tag fa-fw text-muted mr-1"></i> Sujet</label>
+                                <input type="text" id="contact-subject" class="form-control" placeholder="Ex: Partenariat artistique">
+                            </div>
+                            <div class="form-group mb-4">
+                                <label class="form-label"><i class="fas fa-comment fa-fw text-muted mr-1"></i> Message *</label>
+                                <textarea id="contact-message" class="form-control" rows="5" placeholder="Votre message..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-red w-100"><i class="fas fa-paper-plane mr-1"></i> Envoyer le message</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Social sidebar -->
+                <div class="col-md-4 mb-4">
+                    <div class="card bg-dark-card rounded border p-4 d-flex flex-column justify-content-center" style="overflow:visible; min-height:160px;">
+                        <p class="text-muted text-sm mb-3">Vous avez une question ? Notre équipe vous répond sous 24h.</p>
+                        <div class="contact-social">
+                            <span class="text-xs text-muted">Suivez-nous sur les réseaux</span>
+                            <div class="d-flex gap-2 mt-2">
+                                <a href="https://instagram.com" target="_blank" class="btn-icon" style="background:linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);" rel="noopener noreferrer"><i class="fab fa-instagram"></i></a>
+                                <a href="https://youtube.com" target="_blank" class="btn-icon" style="background:#ff0000;" rel="noopener noreferrer"><i class="fab fa-youtube"></i></a>
+                                <a href="https://facebook.com" target="_blank" class="btn-icon" style="background:#1877f2;" rel="noopener noreferrer"><i class="fab fa-facebook-f"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= ESPACE ADMINISTRATEUR (BACK-OFFICE) ================= -->
+        <section id="section-admin" class="container py-5 hidden">
+            <h1 class="mb-4 text-glow"><i class="fas fa-sliders-h text-red mr-2"></i>Tableau de Bord Administrateur</h1>
+            
+            <!-- Tab buttons navigation -->
+            <div class="admin-tab-btn-group mb-4">
+                <button class="admin-tab-btn active" onclick="Admin.switchTab('stats')"><i class="fas fa-chart-line mr-2"></i>Statistiques</button>
+                <button class="admin-tab-btn" onclick="Admin.switchTab('products')"><i class="fas fa-tshirt mr-2"></i>Produits</button>
+                <button class="admin-tab-btn" onclick="Admin.switchTab('videos')"><i class="fas fa-video mr-2"></i>Vidéos</button>
+                <button class="admin-tab-btn" onclick="Admin.switchTab('orders')"><i class="fas fa-truck mr-2"></i>Commandes</button>
+                <button class="admin-tab-btn" onclick="Admin.switchTab('events')"><i class="fas fa-calendar-alt mr-2"></i>Événements</button>
+                <button class="admin-tab-btn" onclick="Admin.switchTab('users')"><i class="fas fa-users-cog mr-2"></i>Comptes</button>
+                <button class="admin-tab-btn" onclick="Admin.switchTab('scanner')"><i class="fas fa-camera mr-2"></i>Scanner</button>
+            </div>
+
+            <!-- Tab 1: Stats Dashboard -->
+            <div id="admin-tab-stats" class="admin-tab-content">
+                <!-- Rendered dynamically -->
+            </div>
+
+            <!-- Tab 2: Products Manager -->
+            <div id="admin-tab-products" class="admin-tab-content hidden">
+                <div class="row">
+                    <!-- Form block -->
+                    <div class="col-md-5 mb-4">
+                        <div class="card bg-dark-card rounded border overflow-hidden" id="admin-prod-form-card">
+                            <div class="admin-form-header">
+                                <i class="fas fa-tshirt"></i>
+                                <span id="admin-prod-title">Ajouter un Produit</span>
+                            </div>
+                            
+                            <form id="admin-product-form" onsubmit="event.preventDefault(); Admin.handleProductSubmit();">
+                                <input type="hidden" id="admin-prod-id">
+                                
+                                <!-- Preview image area -->
+                                <div class="admin-preview-wrap mb-4" id="admin-prod-preview-wrap">
+                                    <div class="admin-preview-placeholder" id="admin-prod-preview-placeholder">
+                                        <i class="fas fa-image"></i>
+                                        <span>Aperçu de l'image</span>
+                                    </div>
+                                    <img id="admin-prod-preview" class="admin-preview-img hidden" alt="Aperçu">
+                                    <button type="button" class="admin-preview-clear hidden" id="admin-prod-preview-clear" onclick="document.getElementById('admin-prod-image-url').value=''; Admin.clearProductPreview();" title="Retirer l'image">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Section: Informations -->
+                                <div class="form-section">
+                                    <div class="form-section-title"><i class="fas fa-info-circle"></i> Informations</div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="form-label"><i class="fas fa-tag fa-fw text-muted mr-1"></i> Nom du produit *</label>
+                                        <input type="text" id="admin-prod-name" class="form-control" placeholder="ex: T-shirt Baobab" required>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label"><i class="fas fa-credit-card fa-fw text-muted mr-1"></i> Prix (Ar) *</label>
+                                            <div class="input-suffix">
+                                                <input type="text" id="admin-prod-price" class="form-control" placeholder="25 000" inputmode="numeric" required onblur="formatPriceInput(this)">
+                                                <span class="input-suffix-text">Ar</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label"><i class="fas fa-boxes fa-fw text-muted mr-1"></i> Stock initial *</label>
+                                            <input type="text" id="admin-prod-stock" class="form-control" placeholder="50" inputmode="numeric" pattern="[0-9]*" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="form-label"><i class="fas fa-folder fa-fw text-muted mr-1"></i> Catégorie *</label>
+                                        <select id="admin-prod-category" class="form-control">
+                                            <!-- Categories loaded dynamically -->
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="form-label"><i class="fas fa-align-left fa-fw text-muted mr-1"></i> Description</label>
+                                        <textarea id="admin-prod-desc" class="form-control" rows="3" placeholder="Description du produit..."></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Section: Image -->
+                                <div class="form-section">
+                                    <div class="form-section-title"><i class="fas fa-camera"></i> Image produit</div>
+
+                                    <div class="upload-zone" id="admin-prod-upload-zone" onclick="document.getElementById('admin-prod-file').click()">
+                                        <i class="fas fa-cloud-upload-alt upload-zone-icon"></i>
+                                        <span class="upload-zone-text">Cliquez pour télécharger une image</span>
+                                        <span class="upload-zone-hint">PNG, JPG ou WebP</span>
+                                        <input type="file" id="admin-prod-file" class="hidden" accept="image/*" onchange="Admin.readProductImage(this)">
+                                    </div>
+
+                                    <div class="form-divider"><span>ou</span></div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="form-label"><i class="fas fa-link fa-fw text-muted mr-1"></i> URL de l'image</label>
+                                        <input type="text" id="admin-prod-image-url" class="form-control" placeholder="/client/assets/product_tshirt.jpg" oninput="Admin.previewProductUrl(this.value)">
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="admin-form-actions">
+                                    <button type="button" class="btn btn-secondary" onclick="Admin.resetProductForm()"><i class="fas fa-undo mr-1"></i> Vider</button>
+                                    <button type="submit" class="btn btn-red"><i class="fas fa-check mr-1"></i> <span id="admin-prod-submit-text">Enregistrer</span></button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- List block -->
+                    <div class="col-md-7 mb-4">
+                        <div class="card bg-dark-card p-4 rounded border">
+                            <h3 class="mb-4">Catalogue produits</h3>
+                            <div id="admin-products-list">
+                                <!-- Loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Videos Manager -->
+            <div id="admin-tab-videos" class="admin-tab-content hidden">
+                <div class="row">
+                    <!-- Form block -->
+                    <div class="col-md-5 mb-4">
+                        <div class="card bg-dark-card rounded border overflow-hidden" id="admin-vid-form-card">
+                            <div class="admin-form-header">
+                                <i class="fas fa-video"></i>
+                                <span id="admin-vid-form-title">Publier une Vidéo</span>
+                            </div>
+                            
+                            <form id="admin-video-form" onsubmit="event.preventDefault(); Admin.handleVideoSubmit();">
+                                <input type="hidden" id="admin-vid-id">
+                                
+                                <!-- Preview thumbnail area -->
+                                <div class="admin-preview-wrap mb-4" id="admin-vid-preview-wrap">
+                                    <div class="admin-preview-placeholder" id="admin-vid-preview-placeholder">
+                                        <i class="fas fa-image"></i>
+                                        <span>Aperçu de la miniature</span>
+                                    </div>
+                                    <img id="admin-vid-preview" class="admin-preview-img hidden" alt="Aperçu miniature">
+                                    <button type="button" class="admin-preview-clear hidden" id="admin-vid-preview-clear" onclick="document.getElementById('admin-vid-thumb-url').value=''; Admin.clearVideoPreview();" title="Retirer l'image">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Section: Informations -->
+                                <div class="form-section">
+                                    <div class="form-section-title"><i class="fas fa-info-circle"></i> Informations</div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="form-label"><i class="fas fa-tag fa-fw text-muted mr-1"></i> Titre de la vidéo *</label>
+                                        <input type="text" id="admin-vid-title-input" class="form-control" placeholder="ex: Documentaire Baobab" required>
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="form-label"><i class="fas fa-folder fa-fw text-muted mr-1"></i> Catégorie *</label>
+                                        <select id="admin-vid-category" class="form-control">
+                                            <!-- Categories loaded dynamically -->
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="form-label"><i class="fas fa-link fa-fw text-muted mr-1"></i> URL de streaming *</label>
+                                        <input type="text" id="admin-vid-url" class="form-control" placeholder="https://www.w3schools.com/html/mov_bbb.mp4" required>
+                                        <span class="text-muted text-xs mt-1">Accepte les fichiers MP4 directs ou liens YouTube/Vimeo.</span>
+                                    </div>
+
+                                    <div class="row align-items-center mb-3">
+                                        <div class="col-md-6 mb-2 mb-md-0">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <input type="checkbox" id="admin-vid-exclusive" class="admin-checkbox">
+                                                <label for="admin-vid-exclusive" class="text-sm font-bold" style="margin:0">Vidéo Exclusive</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label text-xs mb-1"><i class="fas fa-credit-card fa-fw text-muted mr-1"></i> Prix Achat Unique (Ar)</label>
+                                            <div class="input-suffix">
+                                                <input type="text" id="admin-vid-price" class="form-control" placeholder="10 000" value="0" inputmode="numeric" onblur="formatPriceInput(this)">
+                                                <span class="input-suffix-text">Ar</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="form-label"><i class="fas fa-align-left fa-fw text-muted mr-1"></i> Description / Synopsis</label>
+                                        <textarea id="admin-vid-desc" class="form-control" rows="3" placeholder="Description de la vidéo..."></textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Section: Image -->
+                                <div class="form-section">
+                                    <div class="form-section-title"><i class="fas fa-camera"></i> Affiche miniature</div>
+
+                                    <div class="upload-zone" id="admin-vid-upload-zone" onclick="document.getElementById('admin-vid-file').click()">
+                                        <i class="fas fa-cloud-upload-alt upload-zone-icon"></i>
+                                        <span class="upload-zone-text">Cliquez pour télécharger une image</span>
+                                        <span class="upload-zone-hint">PNG, JPG ou WebP</span>
+                                        <input type="file" id="admin-vid-file" class="hidden" accept="image/*" onchange="Admin.readVideoThumbnail(this)">
+                                    </div>
+
+                                    <div class="form-divider"><span>ou</span></div>
+
+                                    <div class="form-group mb-3">
+                                        <label class="form-label"><i class="fas fa-link fa-fw text-muted mr-1"></i> URL miniature externe</label>
+                                        <input type="text" id="admin-vid-thumb-url" class="form-control" placeholder="/client/assets/thumb_baobab.jpg" oninput="Admin.previewVideoUrl(this.value)">
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="admin-form-actions">
+                                    <button type="button" class="btn btn-secondary" onclick="Admin.resetVideoForm()"><i class="fas fa-undo mr-1"></i> Vider</button>
+                                    <button type="submit" class="btn btn-red"><i class="fas fa-check mr-1"></i> <span id="admin-vid-submit-text">Enregistrer</span></button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- List block -->
+                    <div class="col-md-7 mb-4">
+                        <div class="card bg-dark-card p-4 rounded border">
+                            <h3 class="mb-4">Vidéos publiées</h3>
+                            <div id="admin-videos-list">
+                                <!-- Loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 4: Events Manager -->
+            <div id="admin-tab-events" class="admin-tab-content hidden">
+                <div class="row">
+                    <div class="col-md-5 mb-4">
+                        <div class="card bg-dark-card rounded border overflow-hidden">
+                            <div class="admin-form-header">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span id="admin-event-title">Ajouter un Événement</span>
+                            </div>
+                            <form id="admin-event-form" onsubmit="event.preventDefault(); Admin.handleEventSubmit();">
+                                <input type="hidden" id="admin-event-id">
+                                <div class="p-4">
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Titre *</label>
+                                        <input type="text" id="admin-event-title-input" class="form-control" placeholder="Soirée de Lancement" required>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Description</label>
+                                        <textarea id="admin-event-desc" class="form-control" rows="3" placeholder="Description de l'événement..."></textarea>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Date et heure *</label>
+                                            <input type="datetime-local" id="admin-event-date" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Lieu</label>
+                                            <input type="text" id="admin-event-location" class="form-control" placeholder="Salle Polyvalente">
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Prix Normal (Ar)</label>
+                                            <div class="input-suffix">
+                                                <input type="text" id="admin-event-price" class="form-control" placeholder="15 000" inputmode="numeric" value="0" onblur="formatPriceInput(this)">
+                                                <span class="input-suffix-text">Ar</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Places Normales</label>
+                                            <input type="number" id="admin-event-tickets" class="form-control" placeholder="100" value="100">
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Prix VIP (Ar) <span class="text-xs text-muted">(0 = pas de VIP)</span></label>
+                                            <div class="input-suffix">
+                                                <input type="text" id="admin-event-vip-price" class="form-control" placeholder="25 000" inputmode="numeric" value="0" onblur="formatPriceInput(this)">
+                                                <span class="input-suffix-text">Ar</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Places VIP</label>
+                                            <input type="number" id="admin-event-vip-tickets" class="form-control" placeholder="50" value="0">
+                                        </div>
+                                    </div>
+                                    <div class="form-section">
+                                        <div class="form-section-title"><i class="fas fa-camera"></i> Image de l'événement</div>
+
+                                        <div class="admin-preview-wrap mb-4" id="admin-event-preview-wrap">
+                                            <div class="admin-preview-placeholder" id="admin-event-preview-placeholder">
+                                                <i class="fas fa-image"></i>
+                                                <span>Aperçu de l'image</span>
+                                            </div>
+                                            <img id="admin-event-preview" class="admin-preview-img hidden" alt="Aperçu">
+                                            <button type="button" class="admin-preview-clear hidden" id="admin-event-preview-clear" onclick="document.getElementById('admin-event-image-url').value=''; Admin.clearEventPreview();" title="Retirer l'image">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+
+                                        <div class="upload-zone" id="admin-event-upload-zone" onclick="document.getElementById('admin-event-file').click()">
+                                            <i class="fas fa-cloud-upload-alt upload-zone-icon"></i>
+                                            <span class="upload-zone-text">Cliquez pour télécharger une image</span>
+                                            <span class="upload-zone-hint">PNG, JPG ou WebP</span>
+                                            <input type="file" id="admin-event-file" class="hidden" accept="image/*" onchange="Admin.readEventImage(this)">
+                                        </div>
+
+                                        <div class="form-divider"><span>ou</span></div>
+
+                                        <div class="form-group mb-3">
+                                            <label class="form-label"><i class="fas fa-link fa-fw text-muted mr-1"></i> URL de l'image</label>
+                                            <input type="text" id="admin-event-image-url" class="form-control" placeholder="https://..." oninput="Admin.previewEventUrl(this.value)">
+                                        </div>
+                                    </div>
+                                    <div class="admin-form-actions">
+                                        <button type="button" class="btn btn-secondary" onclick="Admin.resetEventForm()"><i class="fas fa-undo mr-1"></i> Vider</button>
+                                        <button type="submit" class="btn btn-red"><i class="fas fa-check mr-1"></i> <span id="admin-event-submit-text">Enregistrer</span></button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-7 mb-4">
+                        <div class="card bg-dark-card p-4 rounded border">
+                            <h3 class="mb-4">Liste des Événements</h3>
+                            <div id="admin-events-list">
+                                <!-- Loaded dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 5: Orders Manager -->
+            <div id="admin-tab-orders" class="admin-tab-content hidden">
+                <div class="card bg-dark-card p-4 rounded border">
+                    <h3 class="mb-4"><i class="fas fa-truck text-red mr-2"></i>Gestion des Commandes et Livraisons</h3>
+                    <div id="admin-orders-list">
+                        <!-- Loaded dynamically -->
+                    </div>
+                    <div id="admin-orders-pagination" class="d-flex justify-content-center gap-2 mt-3"></div>
+                </div>
+            </div>
+
+            <!-- Tab 6: Users Manager -->
+            <div id="admin-tab-users" class="admin-tab-content hidden">
+                <div class="card bg-dark-card p-4 rounded border">
+                    <h3 class="mb-4">Gestion des Comptes Clients</h3>
+                    <div id="admin-users-list">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 7: Scanner -->
+            <div id="admin-tab-scanner" class="admin-tab-content hidden">
+                <div class="card bg-dark-card p-4 rounded border">
+                    <h3 class="mb-4"><i class="fas fa-camera text-info mr-2"></i>Scanner de Tickets</h3>
+                    <p class="text-sm text-muted mb-3">Entrez le QR token ou scannez le code pour vérifier un ticket.</p>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-group mb-3">
+                                <label class="form-label">Token QR</label>
+                                <input type="text" id="scanner-token-input" class="form-control" placeholder="Collez le token QR ici...">
+                            </div>
+                            <button class="btn btn-info" onclick="Admin.scanTicket()"><i class="fas fa-search mr-1"></i> Vérifier</button>
+                        </div>
+                        <div class="col-md-6">
+                            <div id="scanner-result" class="p-3 rounded text-center hidden">
+                                <!-- Result shown here -->
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="my-3">
+                    <div class="text-center">
+                        <p class="text-muted text-sm mb-2">Ou scannez avec la caméra :</p>
+                        <div id="scanner-camera-container">
+                            <video id="scanner-camera" width="320" height="240" style="border:2px solid #333;border-radius:8px;max-width:100%;background:#000;" autoplay muted></video>
+                            <div class="mt-2">
+                                <button class="btn btn-info btn-sm" onclick="Admin.startScanner()"><i class="fas fa-play mr-1"></i> Démarrer la caméra</button>
+                                <button class="btn btn-secondary btn-sm" onclick="Admin.stopScanner()"><i class="fas fa-stop mr-1"></i> Arrêter</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- --- FOOTER --- -->
+    <footer>
+        <div class="container footer-grid">
+            <div class="footer-col">
+                <h5 class="text-glow">MORONDARTVA</h5>
+                <p class="text-muted text-sm mt-3">Maison de production audiovisuelle combinant créativité cinématographique et mode urbaine.</p>
+                <div class="social-icons">
+                    <a href="https://instagram.com" target="_blank" class="btn-icon"><i class="fab fa-instagram"></i></a>
+                    <a href="https://youtube.com" target="_blank" class="btn-icon"><i class="fab fa-youtube"></i></a>
+                    <a href="https://facebook.com" target="_blank" class="btn-icon"><i class="fab fa-facebook"></i></a>
+                </div>
+            </div>
+            
+            <div class="footer-col">
+                <h5>ARBORESCENCE</h5>
+                <ul class="footer-links">
+                    <li><a href="#home">Accueil</a></li>
+                    <li><a href="#shop">Boutique</a></li>
+                    <li><a href="#videos">Espace Streaming</a></li>
+                    <li><a href="#contact">Nous contacter</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h5>BOUTIQUE</h5>
+                <ul class="footer-links">
+                    <li><a href="#shop">T-Shirts Officiels</a></li>
+                    <li><a href="#shop">Casquettes</a></li>
+                    <li><a href="#shop">Accessoires</a></li>
+                    <li><a href="#shop">Éditions Limitées</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h5>CONTACTS DIRECTS</h5>
+                <ul class="footer-links text-sm text-muted">
+                    <li><i class="fab fa-whatsapp mr-1 text-red"></i> +261 32 61 800 18</li>
+                    <li><i class="fab fa-telegram-plane mr-1 text-red"></i> +261 32 61 800 18</li>
+                    <li><i class="fas fa-envelope mr-1 text-red"></i> morondartva@gmail.com</li>
+                    <li class="mt-2 text-xs">Morondava</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="container footer-bottom">
+            <p>&copy; 2026 Morondartva-Store. Tous droits réservés. Réalisé avec passion.</p>
+        </div>
+    </footer>
+
+    <!-- --- FLOATING CONTACT SUPPORT BUBBLE --- -->
+    <div class="floating-support-bubble" id="floating-bubble">
+        <button class="support-trigger" onclick="document.getElementById('support-submenu').classList.toggle('hidden')" title="Nous contacter">
+            <i class="fab fa-whatsapp"></i>
+        </button>
+        
+        <div class="support-menu hidden" id="support-submenu">
+            <h5 class="text-sm mb-2 text-center text-muted">Discuter directement avec nous</h5>
+            <a href="https://wa.me/261326180018" target="_blank" class="support-item support-item-wa">
+                <i class="fab fa-whatsapp mr-2"></i> WhatsApp (+261 32 61 800 18)
+            </a>
+            <a href="https://t.me/morondartva" target="_blank" class="support-item support-item-tg">
+                <i class="fab fa-telegram-plane mr-2"></i> Telegram (+261 32 61 800 18)
+            </a>
+            <a href="mailto:morondartva@gmail.com" class="support-item support-item-mail">
+                <i class="fas fa-envelope mr-2"></i> morondartva@gmail.com
+            </a>
+        </div>
+    </div>
+
+
+    <!-- ================= MODALS & DRAWERS ================= -->
+
+    <!-- 1. AUTH MODAL (LOGIN / REGISTER) -->
+    <div id="auth-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="btn-close text-white" style="position:absolute; top:1.5rem; right:1.5rem;" onclick="closeAuthModal()"><i class="fas fa-times"></i></button>
+            
+            <div class="auth-tabs">
+                <div class="auth-tab-btn active" id="auth-tab-login" onclick="showAuthTab('login')">Connexion</div>
+                <div class="auth-tab-btn" id="auth-tab-register" onclick="showAuthTab('register')">Créer un compte</div>
+            </div>
+
+            <!-- Login Form -->
+            <form id="auth-form-login" onsubmit="event.preventDefault(); handleLoginSubmit();">
+                <div class="form-group mb-3">
+                    <label class="form-label"><i class="fas fa-envelope fa-fw text-muted mr-1"></i> Adresse Email *</label>
+                    <input type="email" id="login-email" class="form-control" placeholder="client@domain.com" required autocomplete="username">
+                </div>
+                <div class="form-group mb-4">
+                    <label class="form-label"><i class="fas fa-lock fa-fw text-muted mr-1"></i> Mot de passe *</label>
+                    <div class="password-wrap">
+                        <input type="password" id="login-password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                        <button type="button" class="password-toggle" onclick="togglePassword('login-password', this)" tabindex="-1">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-red w-100"><i class="fas fa-sign-in-alt mr-1"></i> Se connecter</button>
+                <div class="text-center mt-3 text-xs text-muted">
+                    <span class="text-xs text-muted">Comptes test : admin@morondartva.com/admin • scanner@morondartva.com/scanner</span>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form id="auth-form-register" class="hidden" onsubmit="event.preventDefault(); handleRegisterSubmit();">
+                <div class="form-group mb-3">
+                    <label class="form-label"><i class="fas fa-user fa-fw text-muted mr-1"></i> Nom Complet *</label>
+                    <input type="text" id="register-fullname" class="form-control" placeholder="Ex: Toky Randria" required>
+                </div>
+                <div class="form-group mb-3">
+                    <label class="form-label"><i class="fas fa-envelope fa-fw text-muted mr-1"></i> Adresse Email *</label>
+                    <input type="email" id="register-email" class="form-control" placeholder="client@domain.com" required>
+                </div>
+                <div class="form-group mb-3">
+                    <label class="form-label"><i class="fas fa-lock fa-fw text-muted mr-1"></i> Mot de passe *</label>
+                    <div class="password-wrap">
+                        <input type="password" id="register-password" class="form-control" placeholder="Min 6 caractères" required minlength="6">
+                        <button type="button" class="password-toggle" onclick="togglePassword('register-password', this)" tabindex="-1">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group mb-4">
+                    <label class="form-label"><i class="fas fa-check-circle fa-fw text-muted mr-1"></i> Confirmer le mot de passe *</label>
+                    <div class="password-wrap">
+                        <input type="password" id="register-confirm-password" class="form-control" placeholder="Répétez le mot de passe" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword('register-confirm-password', this)" tabindex="-1">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-red w-100"><i class="fas fa-user-plus mr-1"></i> Créer mon compte</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. CART DRAWER (SLIDE-OUT) -->
+    <div class="cart-drawer-overlay hidden" id="cart-drawer-overlay" onclick="Shop.closeCartDrawer()"></div>
+    <div class="cart-drawer" id="cart-drawer">
+        <div class="cart-drawer-header">
+            <h4><i class="fas fa-shopping-basket text-red mr-2"></i>Mon Panier</h4>
+            <button class="btn-close text-white" onclick="Shop.closeCartDrawer()"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <!-- Cart Items (loaded dynamically) -->
+        <div class="cart-drawer-body" id="cart-drawer-items">
+            <!-- Loaded dynamically -->
+        </div>
+
+        <div class="cart-drawer-footer">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="font-bold">Total :</span>
+                <span class="text-red font-bold text-lg" id="cart-drawer-total">Ar 0</span>
+            </div>
+            <button class="btn btn-red w-100" id="cart-drawer-checkout-btn" onclick="Shop.openCheckoutWizard()" disabled>Valider la Commande</button>
+        </div>
+    </div>
+
+    <!-- 3. CHECKOUT WIZARD MODAL -->
+    <div id="checkout-modal" class="modal-overlay hidden">
+        <div class="modal-content modal-content-lg">
+            <button class="btn-close text-white" style="position:absolute; top:1.5rem; right:1.5rem;" onclick="Shop.closeCheckoutWizard()"><i class="fas fa-times"></i></button>
+            
+            <h2 class="mb-4 text-glow"><i class="fas fa-shopping-cart text-red mr-2"></i>Tunnel d'Achat</h2>
+
+            <!-- Step indicator -->
+            <div class="checkout-progress">
+                <div class="checkout-progress-step active" id="checkout-progress-step-1">1</div>
+                <div class="checkout-progress-step" id="checkout-progress-step-2">2</div>
+                <div class="checkout-progress-step" id="checkout-progress-step-3">3</div>
+            </div>
+
+            <!-- STEP 1: Client Delivery details -->
+            <div id="checkout-step-1">
+                <div class="row">
+                    <!-- Form block -->
+                    <div class="col-md-7 mb-3">
+                        <form id="checkout-form" onsubmit="event.preventDefault(); Shop.setCheckoutStep(2);">
+                            <div class="form-group mb-3">
+                                <label class="form-label"><i class="fas fa-map-marker-alt fa-fw text-muted mr-1"></i> Adresse de livraison complète *</label>
+                                <textarea id="checkout-address" class="form-control" placeholder="Votre adresse complète" required></textarea>
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label class="form-label"><i class="fas fa-truck fa-fw text-muted mr-1"></i> Zone de livraison *</label>
+                                <select id="checkout-delivery-zone" class="form-control" onchange="Shop.updateDeliveryFee()">
+                                    <option value="city">En ville — 3 000 Ar</option>
+                                    <option value="other">Hors ville — À discuter</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label"><i class="fas fa-map fa-fw text-muted mr-1"></i> Point de livraison (cliquez sur la carte)</label>
+                                <div id="checkout-map" style="height: 220px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"></div>
+                                <input type="hidden" id="checkout-lat" value="">
+                                <input type="hidden" id="checkout-lng" value="">
+                                <p class="text-xs text-muted mt-1"><i class="fas fa-info-circle"></i> Cliquez sur la carte pour indiquer votre position</p>
+                            </div>
+
+                            <div class="form-group mb-3">
+                                <label class="form-label"><i class="fas fa-phone-alt fa-fw text-muted mr-1"></i> Numéro de téléphone de contact *</label>
+                                <input type="text" id="checkout-phone" class="form-control" placeholder="+261 34 12 345 67" required>
+                            </div>
+
+                            <div class="form-group mb-4">
+                                <label class="form-label"><i class="fas fa-credit-card fa-fw text-muted mr-1"></i> Mode de Règlement *</label>
+                                <select id="checkout-payment-method" class="form-control">
+                                    <option value="mvola">MVola (Telma)</option>
+                                    <option value="orange_money">Orange Money</option>
+                                    <option value="airtel_money">Airtel Money</option>
+                                    <option value="paypal">PayPal (International USD)</option>
+                                    <option value="card">Carte Bancaire Visa / Mastercard</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-red w-100"><i class="fas fa-arrow-right mr-1"></i> Continuer vers le paiement</button>
+                        </form>
+                    </div>
+
+                    <!-- Summary block -->
+                    <div class="col-md-5 mb-3">
+                        <div class="card bg-dark-card p-3 rounded border h-100">
+                            <h4 class="mb-3">Résumé</h4>
+                            <div id="checkout-items-summary">
+                                <!-- Loaded dynamically -->
+                            </div>
+                            <div class="d-flex justify-content-between font-bold mt-3">
+                                <span>Sous-total :</span>
+                                <span id="checkout-subtotal" class="text-red">Ar 0</span>
+                            </div>
+                            <div class="d-flex justify-content-between font-bold">
+                                <span>Livraison :</span>
+                                <span id="checkout-delivery-fee" class="text-muted">—</span>
+                            </div>
+                            <hr class="border-muted">
+                            <div class="d-flex justify-content-between font-bold text-lg text-red">
+                                <span>Total :</span>
+                                <span id="checkout-total-summary">Ar 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: Payment Gateway Interface -->
+            <div id="checkout-step-2" class="hidden">
+                <h3 id="payment-step-title" class="mb-3">Paiement en Cours</h3>
+                
+                <div id="payment-step-instruction">
+                    <!-- Loaded dynamically based on chosen method -->
+                </div>
+
+                <div id="payment-step-details" class="mb-4">
+                    <!-- Additional forms or inputs -->
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-secondary w-50" onclick="Shop.setCheckoutStep(1)">Retour</button>
+                    <button class="btn btn-red w-50" id="checkout-submit-order-btn" onclick="Shop.processOrderSubmission()">Valider et Commander</button>
+                </div>
+            </div>
+
+            <!-- STEP 3: Thank you Confirmation -->
+            <div id="checkout-step-3" class="hidden">
+                <div id="checkout-confirmation-details">
+                    <!-- Loaded dynamically -->
+                </div>
+                <div class="text-center mt-4">
+                    <button class="btn btn-red" onclick="Shop.closeCheckoutWizard(); window.location.hash='#profile';">Voir mes commandes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. STREAMING VIDEO PLAYER MODAL -->
+    <div id="player-modal" class="modal-overlay hidden">
+        <div class="modal-content modal-content-lg" id="player-modal-body">
+            <!-- Loaded dynamically from video.js -->
+        </div>
+    </div>
+
+    <!-- 5. TICKET RESERVATION MODAL -->
+    <div id="ticket-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="btn-close text-white" style="position:absolute; top:1.5rem; right:1.5rem;" onclick="Events.closeTicketModal()"><i class="fas fa-times"></i></button>
+            <div id="ticket-modal-content">
+                <!-- Loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. TICKET CONFIRMATION MODAL (with QR) -->
+    <div id="ticket-confirm-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 450px; text-align: center;">
+            <button class="btn-close text-white" style="position:absolute; top:1.5rem; right:1.5rem;" onclick="Events.closeConfirmModal()"><i class="fas fa-times"></i></button>
+            <div id="ticket-confirm-content">
+                <!-- Loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- --- SCRIPTS INJECTIONS --- -->
+    <script src="/client/js/notify.js"></script>
+    <script src="/client/js/api.js"></script>
+    <script src="/client/js/auth.js"></script>
+    <script src="/client/js/shop.js"></script>
+    <script src="/client/js/video.js"></script>
+    <script src="/client/js/events.js"></script>
+    <script src="/client/js/admin.js"></script>
+    <script src="/client/js/app.js"></script>
+
+</body>
+</html>
