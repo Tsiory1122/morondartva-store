@@ -49,7 +49,8 @@ const App = {
             '#events': 'section-events',
             '#profile': 'section-profile',
             '#admin': 'section-admin',
-            '#contact': 'section-contact'
+            '#contact': 'section-contact',
+            '#scanner': 'section-scanner'
         };
 
         const targetSectionId = routes[hash] || 'section-home';
@@ -89,6 +90,13 @@ const App = {
             Admin.init();
         } else if (hash === '#home') {
             this.loadHomeFeatured();
+        } else if (hash === '#scanner') {
+            // Scanner section - no data loading needed
+        }
+        
+        // Stop camera if leaving scanner section
+        if (hash !== '#scanner' && typeof Scanner !== 'undefined') {
+            Scanner.stop();
         }
         
         // Scroll to top

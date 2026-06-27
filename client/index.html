@@ -65,9 +65,14 @@
                         <span id="nav-user-sub-badge" class="badge">Gratuit</span>
                     </a>
                     
+                    <!-- Scanner Link (Hidden by default) -->
+                    <a href="#scanner" id="nav-scanner-link" class="btn btn-secondary btn-sm hidden" title="Scanner">
+                        <i class="fas fa-camera mr-1"></i> <span>Scanner</span>
+                    </a>
+
                     <!-- Admin Link (Hidden by default) -->
                     <a href="#admin" id="nav-admin-link" class="btn btn-secondary btn-sm hidden" title="Back-Office">
-                        <i class="fas fa-cog mr-1"></i> Admin
+                        <i class="fas fa-cog mr-1"></i> <span>Admin</span>
                     </a>
 
                     <!-- Logout Button -->
@@ -97,6 +102,7 @@
                     <a href="#events" class="mobile-nav-link" onclick="App.toggleMobileNav()">Événements</a>
                     <a href="#profile" class="mobile-nav-link" onclick="App.toggleMobileNav()">Mon Profil</a>
                     <a href="#contact" class="mobile-nav-link" onclick="App.toggleMobileNav()">Contact</a>
+                    <a href="#scanner" id="mobile-nav-scanner" class="mobile-nav-link hidden" onclick="App.toggleMobileNav()">Scanner</a>
                 </nav>
                 <div class="mobile-nav-footer text-xs text-muted">
                     &copy; 2026 Morondartva-Store
@@ -287,6 +293,63 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SCANNER DE TICKETS ================= -->
+        <section id="section-scanner" class="container py-5 hidden">
+            <h1 class="mb-4 text-glow"><i class="fas fa-camera text-info mr-2"></i>Scanner de Tickets</h1>
+
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card bg-dark-card p-4 rounded border">
+                        <h4 class="mb-3"><i class="fas fa-video mr-2 text-info"></i>Caméra</h4>
+                        <div id="scanner-camera-container" class="text-center">
+                            <video id="scanner-camera" class="scanner-video" autoplay muted></video>
+                            <div class="mt-3 d-flex gap-2 justify-content-center flex-wrap">
+                                <button id="scanner-start-btn" class="btn btn-info" onclick="Scanner.start()">
+                                    <i class="fas fa-play mr-1"></i> Démarrer la caméra
+                                </button>
+                                <button id="scanner-stop-btn" class="btn btn-secondary hidden" onclick="Scanner.stop()">
+                                    <i class="fas fa-stop mr-1"></i> Arrêter
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card bg-dark-card p-4 rounded border mt-3">
+                        <h4 class="mb-3"><i class="fas fa-key mr-2 text-muted"></i>Token QR</h4>
+                        <div class="d-flex gap-2">
+                            <input type="text" id="scanner-token-input" class="form-control" placeholder="Collez le token QR ici...">
+                            <button class="btn btn-info" onclick="Scanner.verify()"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card bg-dark-card p-4 rounded border">
+                        <h4 class="mb-3"><i class="fas fa-check-circle mr-2 text-muted"></i>Résultat</h4>
+                        <div id="scanner-result" class="hidden">
+                            <!-- Result shown here -->
+                        </div>
+                        <div id="scanner-result-empty" class="text-center text-muted py-4">
+                            <i class="fas fa-qrcode fa-3x mb-2"></i>
+                            <p>Scannez un QR code ou saisissez un token pour vérifier un ticket.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card bg-dark-card p-4 rounded border">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h4 class="mb-0"><i class="fas fa-history mr-2 text-muted"></i>Historique des scans</h4>
+                    <button class="btn btn-xs btn-secondary" onclick="Scanner.clearHistory()">
+                        <i class="fas fa-trash mr-1"></i> Effacer
+                    </button>
+                </div>
+                <div id="scanner-history-list">
+                    <p class="text-muted text-sm">Aucun scan pour le moment.</p>
                 </div>
             </div>
         </section>
@@ -991,6 +1054,7 @@
     <script src="/client/js/shop.js"></script>
     <script src="/client/js/video.js"></script>
     <script src="/client/js/events.js"></script>
+    <script src="/client/js/scanner.js"></script>
     <script src="/client/js/admin.js"></script>
     <script src="/client/js/app.js"></script>
 

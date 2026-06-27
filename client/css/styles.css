@@ -1805,6 +1805,11 @@ textarea.form-control {
     margin-bottom: 1rem;
 }
 
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .table th, .table td {
     padding: 0.75rem;
     text-align: left;
@@ -2096,6 +2101,34 @@ footer {
     text-align: center;
 }
 
+/* --- SCANNER --- */
+.scanner-video {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    border: 2px solid #333;
+    border-radius: 8px;
+    background: #000;
+}
+#scanner-result {
+    min-height: 100px;
+}
+.scanner-history-item {
+    padding: 0.75rem;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    border-left-width: 3px;
+    border-left-style: solid;
+}
+.scanner-history-item:last-child {
+    margin-bottom: 0;
+}
+#scanner-history-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
 /* --- RESPONSIVE BREAKPOINTS --- */
 html { overflow-x: hidden; }
 body { overflow-x: hidden; width: 100%; }
@@ -2115,7 +2148,6 @@ body { overflow-x: hidden; width: 100%; }
     .hero-subtitle { font-size: 1rem; }
     .admin-tab-btn-group { flex-direction: column; }
     .admin-tab-btn { width: 100%; text-align: left; }
-    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .table-responsive table { min-width: 600px; }
     .modal-content { margin: 0 1rem; padding: 1.5rem; }
     .modal-content-lg { max-width: 100%; }
@@ -2127,7 +2159,6 @@ body { overflow-x: hidden; width: 100%; }
 }
 
 @media (max-width: 768px) {
-    html, body { overflow-x: hidden; }
     .header-container { height: 60px; }
     .header-container .logo-container { font-size: 1.4rem; min-width: 0; }
     .header-container .logo-img { height: 30px; margin-right: 8px; }
@@ -2164,7 +2195,6 @@ body { overflow-x: hidden; width: 100%; }
 }
 
 @media (max-width: 600px) {
-    html, body { overflow-x: hidden; }
     .header-container { height: 56px; }
     .header-container .logo-container { font-size: 1.25rem; }
     .header-container .logo-img { height: 26px; }
@@ -2202,7 +2232,6 @@ body { overflow-x: hidden; width: 100%; }
 }
 
 @media (max-width: 480px) {
-    html, body { overflow-x: hidden; }
     .header-container { height: 50px; }
     .header-container .logo-img { height: 24px; }
     .header-container .logo-container .logo-text { font-size: 1.1rem; }
@@ -2210,7 +2239,7 @@ body { overflow-x: hidden; width: 100%; }
     .nav-actions .btn-icon { width: 30px; height: 30px; font-size: 0.75rem; }
     .nav-actions .btn-red.btn-sm { font-size: 0; }
     .nav-actions .btn-red.btn-sm i { font-size: 0.85rem; margin-right: 0; }
-    .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
     .gap-3 { gap: 0.5rem; }
     .hero-title { font-size: 1.4rem; }
     .hero-banner { min-height: 220px; height: 30vh; }
@@ -2251,16 +2280,12 @@ body { overflow-x: hidden; width: 100%; }
 }
 
 @media (max-width: 360px) {
-    #nav-user-menu .btn-icon { width: 26px; height: 26px; font-size: 0.65rem; }
-    .product-card .product-name { font-size: 0.8rem; }
-    .video-card .video-title { font-size: 0.8rem; }
-}
-
-@media (max-width: 360px) {
     .header-container .logo-container .logo-text { display: none; }
     .nav-actions .badge { display: none; }
     #nav-user-menu .btn-icon { width: 26px; height: 26px; font-size: 0.65rem; }
     .product-card .product-name { font-size: 0.8rem; }
     .video-card .video-title { font-size: 0.8rem; }
     .hero-title { font-size: 1.15rem; }
+    .support-menu { width: 180px; }
+    .support-item { padding: 0.4rem 0.6rem; font-size: 0.75rem; }
 }

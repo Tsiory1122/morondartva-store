@@ -204,42 +204,60 @@ const Auth = {
         const guestMenu = document.getElementById('nav-guest-menu');
         const userMenu = document.getElementById('nav-user-menu');
         const userFullnameSpan = document.getElementById('nav-user-fullname');
-        const adminLink = document.getElementById('nav-admin-link');
-        const subBadge = document.getElementById('nav-user-sub-badge');
+            const adminLink = document.getElementById('nav-admin-link');
+            const scannerLink = document.getElementById('nav-scanner-link');
+            const mobileScannerLink = document.getElementById('mobile-nav-scanner');
+            const subBadge = document.getElementById('nav-user-sub-badge');
 
-        if (this.user) {
-            if (guestMenu) guestMenu.classList.add('hidden');
-            if (userMenu) userMenu.classList.remove('hidden');
-            if (userFullnameSpan) userFullnameSpan.textContent = this.user.fullname;
-            
-            // Premium/Admin styling badges
-            if (subBadge) {
-                if (this.user.role === 'admin') {
-                    subBadge.textContent = 'Admin';
-                    subBadge.className = 'badge badge-admin';
-                } else if (this.user.subscription_status === 'premium') {
-                    subBadge.textContent = 'Premium';
-                    subBadge.className = 'badge badge-premium';
-                } else {
-                    subBadge.textContent = 'Gratuit';
-                    subBadge.className = 'badge badge-free';
-                }
-            }
+            if (this.user) {
+                if (guestMenu) guestMenu.classList.add('hidden');
+                if (userMenu) userMenu.classList.remove('hidden');
+                if (userFullnameSpan) userFullnameSpan.textContent = this.user.fullname;
 
-            // Show admin panel navigation link if appropriate
-            if (adminLink) {
-                if (this.user.role === 'admin') {
-                    adminLink.classList.remove('hidden');
-                } else {
-                    adminLink.classList.add('hidden');
+                // Premium/Admin styling badges
+                if (subBadge) {
+                    if (this.user.role === 'admin') {
+                        subBadge.textContent = 'Admin';
+                        subBadge.className = 'badge badge-admin';
+                    } else if (this.user.subscription_status === 'premium') {
+                        subBadge.textContent = 'Premium';
+                        subBadge.className = 'badge badge-premium';
+                    } else {
+                        subBadge.textContent = 'Gratuit';
+                        subBadge.className = 'badge badge-free';
+                    }
                 }
+
+                // Show admin panel and scanner links
+                if (adminLink) {
+                    if (this.user.role === 'admin') {
+                        adminLink.classList.remove('hidden');
+                    } else {
+                        adminLink.classList.add('hidden');
+                    }
+                }
+                if (scannerLink) {
+                    if (this.user.role === 'admin' || this.user.role === 'scanner') {
+                        scannerLink.classList.remove('hidden');
+                    } else {
+                        scannerLink.classList.add('hidden');
+                    }
+                }
+                if (mobileScannerLink) {
+                    if (this.user.role === 'admin' || this.user.role === 'scanner') {
+                        mobileScannerLink.classList.remove('hidden');
+                    } else {
+                        mobileScannerLink.classList.add('hidden');
+                    }
+                }
+            } else {
+                if (guestMenu) guestMenu.classList.remove('hidden');
+                if (userMenu) userMenu.classList.add('hidden');
+                if (adminLink) adminLink.classList.add('hidden');
+                if (scannerLink) scannerLink.classList.add('hidden');
+                if (mobileScannerLink) mobileScannerLink.classList.add('hidden');
             }
-        } else {
-            if (guestMenu) guestMenu.classList.remove('hidden');
-            if (userMenu) userMenu.classList.add('hidden');
-            if (adminLink) adminLink.classList.add('hidden');
-        }
-    },
+        },
 
     async updateProfilePage() {
         const profileSection = document.getElementById('section-profile');
