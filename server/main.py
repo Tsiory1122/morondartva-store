@@ -1,15 +1,23 @@
 import os
 import sys
+import ssl
+import threading
 import mimetypes
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from database import initialize_database
 from routes import dispatch_api_request
 
 PORT = 8000
+HTTPS_PORT = 8443
 HOST = '0.0.0.0'
 
-# Ensure correct base directory paths
+# SSL certificate paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SERVER_DIR = os.path.dirname(os.path.abspath(__file__))
+CERT_FILE = os.path.join(SERVER_DIR, 'cert.pem')
+KEY_FILE = os.path.join(SERVER_DIR, 'key.pem')
+
+# Ensure correct base directory paths
 CLIENT_DIR = os.path.join(BASE_DIR, 'client')
 UPLOADS_DIR = os.path.join(BASE_DIR, 'uploads')
 
@@ -160,13 +168,40 @@ def run():
 
     # Register mime types
     mimetypes.init()
-    
-    server_address = (HOST, PORT)
-    httpd = HTTPServer(server_address, CustomHTTPRequestHandler)
+
+    ssl_available = os.path.exists(CERT_FILE) and os.path.exists(KEY_FILE)
+
+    # Start HTTP server
+    httpd = HTTPServer((HOST, PORT), CustomHTTPRequestHandler)
     print(f"============================================================")
     print(f"  MORONDARTVA-STORE SERVER STARTED SUCCESSFULLY")
-    print(f"  Local Address: http://localhost:{PORT}")
-    print(f"  Network Address: http://{HOST}:{PORT}")
+    print(f"  HTTP:  http://localhost:{PORT}")
+    print(f"        http://{HOST}:{PORT}")
+    
+    if ssl_available:
+        # Start HTTPS server with SSL
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.load_cert_chain(CERT_FILE, KEY_FILE)
+        httpd_https = HTTPServer((HOST, HTTPS_PORT), CustomHTTPRequestHandler)
+        httpd_https.socket = ctx.wrap_socket(httpd_https.socket, server_side=True)
+        print(f"  HTTPS: https://localhost:{HTTPS_PORT}")
+        print(f"         https://{HOST}:{HTTPS_PORT}")
+        print(f"")
+        print(f"  Camera requires HTTPS on mobile.")
+        print(f"  Connect via HTTPS for camera scanning.")
+        # Run HTTPS in a separate thread
+        def serve_https():
+            try:
+                httpd_https.serve_forever()
+            except Exception as e:
+                print(f"HTTPS server error: {e}")
+        t = threading.Thread(target=serve_https, daemon=True)
+        t.start()
+    else:
+        print(f"  HTTPS not available (cert.pem/key.pem missing)")
+        print(f"  Run: openssl req -x509 -newkey rsa:2048 -keyout server/key.pem")
+        print(f"       -out server/cert.pem -days 3650 -nodes -subj '/CN=localhost'")
+    
     print(f"============================================================")
     
     try:
@@ -174,6 +209,8 @@ def run():
     except KeyboardInterrupt:
         print("\nStopping server...")
         httpd.server_close()
+        if ssl_available:
+            httpd_https.server_close()
         sys.exit(0)
 
 if __name__ == '__main__':
