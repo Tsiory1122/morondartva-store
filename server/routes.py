@@ -1425,7 +1425,7 @@ def handle_verify_ticket(handler):
             return send_json(handler, {"valid": False, "message": "Ce ticket a été annulé.", "ticket": dict(ticket)}, 200)
         if ticket['status'] == 'used':
             return send_json(handler, {"valid": False, "message": "Ce ticket a déjà été utilisé.", "ticket": dict(ticket)}, 200)
-        user_info = conn.execute("SELECT username FROM users WHERE id = ?", (ticket['user_id'],)).fetchone()
+        user_info = conn.execute("SELECT fullname, email FROM users WHERE id = ?", (ticket['user_id'],)).fetchone()
         return send_json(handler, {
             "valid": True,
             "message": "Ticket valide !",
@@ -1436,7 +1436,7 @@ def handle_verify_ticket(handler):
                 "quantity": ticket['quantity'],
                 "ticket_type": ticket['ticket_type'],
                 "status": ticket['status'],
-                "username": user_info['username'] if user_info else "Inconnu"
+                "username": user_info['fullname'] if user_info else "Inconnu"
             }
         }, 200)
     except Exception as e:
