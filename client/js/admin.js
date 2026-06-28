@@ -624,16 +624,33 @@ const Admin = {
         container.innerHTML = `
             <div class="table-responsive">
                 <table class="table table-dark align-middle">
-                    <thead><tr><th>ID</th><th>Client</th><th>Total</th><th>Paiement</th><th>Livraison</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>ID</th><th>Client</th><th>Total</th><th>Statut</th><th>Livraison</th><th>Actions</th></tr></thead>
                     <tbody>
                         ${this.adminOrders.map(o => {
+                            if (o.status === 'pending_validation') {
+                                return `
+                                <tr class="border-warning">
+                                    <td>#${o.id}</td>
+                                    <td>${o.user_name || o.user_id}</td>
+                                    <td>${formatPrice(o.total_amount)}</td>
+                                    <td><span class="badge badge-warning">En attente de validation</span></td>
+                                    <td>—</td>
+                                    <td>
+                                        <button class="btn btn-success btn-sm" onclick="Admin.validateOrder(${o.id})">
+                                            <i class="fas fa-check mr-1"></i> Valider
+                                        </button>
+                                    </td>
+                                </tr>`;
+                            }
                             const curIdx = flow.indexOf(o.delivery_status);
+                            const statusLabel = o.status === 'validated' ? 'Validée' : (o.status === 'paid' ? 'Payée' : o.status);
+                            const statusBadge = o.status === 'validated' ? 'badge-success' : (o.status === 'paid' ? 'badge-success' : 'badge-warning');
                             return `
                             <tr>
                                 <td>#${o.id}</td>
                                 <td>${o.user_name || o.user_id}</td>
                                 <td>${formatPrice(o.total_amount)}</td>
-                                <td><span class="badge ${o.status === 'paid' ? 'badge-success' : 'badge-warning'}">${o.status === 'paid' ? 'Payée' : o.status}</span></td>
+                                <td><span class="badge ${statusBadge}">${statusLabel}</span></td>
                                 <td><span class="badge ${db[o.delivery_status] || 'badge-warning'}">${dl[o.delivery_status] || o.delivery_status}</span></td>
                                 <td>
                                     <select class="form-control form-control-sm text-xs bg-dark inline-select" onchange="Admin.updateDeliveryStatus(${o.id}, this.value)" style="width:130px;">
@@ -665,6 +682,91 @@ const Admin = {
         try {
             await API.put(`/orders/${orderId}/delivery`, { delivery_status: status });
             Notify.show(`Statut mis à jour : ${status}`, 'success');
+            this.loadAdminOrders();
+        } catch (e) {
+            Notify.show(e.message, 'error');
+        }
+    },
+
+    async validateOrder(orderId) {
+        try {
+            const res = await API.post(`/orders/${orderId}/validate`, {});
+            Notify.show(res.message || 'Commande validée !', 'success');
+            this.loadAdminOrders();
+        } catch (e) {
+            Notify.show(e.message, 'error');
+        }
+    },
+
+    // TICKETS ADMIN
+
+    async loadAdminTickets() {
+        const container = document.getElementById('admin-tickets-list');
+        if (!container) return;
+        container.innerHTML = '<div class="text-center py-5"><div class="spinner"></div></div>';
+        try {
+            const tickets = await API.get('/admin/tickets');
+            this.adminTickets = tickets || [];
+            this.renderAdminTicketsList();
+        } catch (e) {
+            container.innerHTML = `<p class="text-danger">Erreur: ${e.message}</p>`;
+        }
+    },
+
+    renderAdminTicketsList() {
+        const container = document.getElementById('admin-tickets-list');
+        if (!container) return;
+        if (!this.adminTickets || this.adminTickets.length === 0) {
+            container.innerHTML = '<p class="text-muted py-3 text-center">Aucun ticket.</p>';
+            return;
+        }
+        container.innerHTML = `
+            <div class="table-responsive">
+                <table class="table table-dark align-middle">
+                    <thead><tr><th>ID</th><th>Client</th><th>Événement</th><th>Places</th><th>Type</th><th>Statut</th><th>Actions</th></tr></thead>
+                    <tbody>
+                        ${this.adminTickets.map(t => {
+                            const statusLabels = {
+                                'pending_validation': 'En attente de validation',
+                                'pending_payment': 'Paiement en attente',
+                                'confirmed': 'Confirmé',
+                                'used': 'Utilisé',
+                                'cancelled': 'Annulé'
+                            };
+                            const statusBadges = {
+                                'pending_validation': 'badge-warning',
+                                'pending_payment': 'badge-warning',
+                                'confirmed': 'badge-success',
+                                'used': 'badge-info',
+                                'cancelled': 'badge-danger'
+                            };
+                            const showValidate = t.status === 'pending_validation';
+                            return `
+                            <tr class="${showValidate ? 'border-warning' : ''}">
+                                <td>#${t.id}</td>
+                                <td>${t.user_name || t.user_id}</td>
+                                <td>${t.event_title}</td>
+                                <td>${t.quantity}</td>
+                                <td>${t.ticket_type === 'vip' ? '<span class="badge badge-gold">VIP</span>' : 'Normal'}</td>
+                                <td><span class="badge ${statusBadges[t.status] || 'badge-warning'}">${statusLabels[t.status] || t.status}</span></td>
+                                <td>
+                                    ${showValidate ? `<button class="btn btn-success btn-sm" onclick="Admin.validateTicket(${t.id})">
+                                        <i class="fas fa-check mr-1"></i> Valider
+                                    </button>` : '—'}
+                                </td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    },
+
+    async validateTicket(ticketId) {
+        try {
+            const res = await API.post(`/tickets/${ticketId}/validate`, {});
+            Notify.show(res.message || 'Ticket validé !', 'success');
+            this.loadAdminTickets();
         } catch (e) {
             Notify.show(e.message, 'error');
         }
@@ -842,9 +944,11 @@ const Admin = {
         } else if (tab === 'events') {
             this.initEventUploadZone();
             this.loadAdminEvents();
-        } else if (tab === 'orders') {
-            this.loadAdminOrders();
-        } else if (tab === 'users') this.loadUsers();
+    } else if (tab === 'orders') {
+        this.loadAdminOrders();
+    } else if (tab === 'tickets') {
+        this.loadAdminTickets();
+    } else if (tab === 'users') this.loadUsers();
         else if (tab === 'scanner') {
             document.getElementById('scanner-result').classList.add('hidden');
         }

@@ -364,6 +364,7 @@
                 <button class="admin-tab-btn" onclick="Admin.switchTab('products')"><i class="fas fa-tshirt mr-2"></i>Produits</button>
                 <button class="admin-tab-btn" onclick="Admin.switchTab('videos')"><i class="fas fa-video mr-2"></i>Vidéos</button>
                 <button class="admin-tab-btn" onclick="Admin.switchTab('orders')"><i class="fas fa-truck mr-2"></i>Commandes</button>
+                <button class="admin-tab-btn" onclick="Admin.switchTab('tickets')"><i class="fas fa-ticket-alt mr-2"></i>Tickets</button>
                 <button class="admin-tab-btn" onclick="Admin.switchTab('events')"><i class="fas fa-calendar-alt mr-2"></i>Événements</button>
                 <button class="admin-tab-btn" onclick="Admin.switchTab('users')"><i class="fas fa-users-cog mr-2"></i>Comptes</button>
                 <button class="admin-tab-btn" onclick="Admin.switchTab('scanner')"><i class="fas fa-camera mr-2"></i>Scanner</button>
@@ -700,7 +701,18 @@
                 </div>
             </div>
 
-            <!-- Tab 6: Users Manager -->
+            <!-- Tab 6: Tickets Manager -->
+            <div id="admin-tab-tickets" class="admin-tab-content hidden">
+                <div class="card bg-dark-card p-4 rounded border">
+                    <h3 class="mb-4"><i class="fas fa-ticket-alt text-info mr-2"></i>Gestion des Tickets</h3>
+                    <p class="text-sm text-muted mb-3">Validez les tickets en attente et gérez les réservations.</p>
+                    <div id="admin-tickets-list">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 7: Users Manager -->
             <div id="admin-tab-users" class="admin-tab-content hidden">
                 <div class="card bg-dark-card p-4 rounded border">
                     <h3 class="mb-4">Gestion des Comptes Clients</h3>
@@ -710,7 +722,7 @@
                 </div>
             </div>
 
-            <!-- Tab 7: Scanner -->
+            <!-- Tab 8: Scanner -->
             <div id="admin-tab-scanner" class="admin-tab-content hidden">
                 <div class="card bg-dark-card p-4 rounded border">
                     <h3 class="mb-4"><i class="fas fa-camera text-info mr-2"></i>Scanner de Tickets</h3>

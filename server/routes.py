@@ -840,6 +840,25 @@ def handle_get_orders(handler):
     finally:
         conn.close()
 
+def handle_validate_order(handler, order_id):
+    user = get_current_user_from_request(handler)
+    if not user or user['role'] != 'admin':
+        return send_error(handler, "Accès interdit.", 403)
+    conn = get_db_connection()
+    try:
+        order = conn.execute("SELECT status, delivery_status FROM orders WHERE id = ?", (order_id,)).fetchone()
+        if not order:
+            return send_error(handler, "Commande introuvable.", 404)
+        if order['status'] != 'pending_validation':
+            return send_error(handler, f"Statut invalide. Statut actuel: {order['status']}")
+        conn.execute("UPDATE orders SET status = 'validated', delivery_status = 'pending' WHERE id = ?", (order_id,))
+        conn.commit()
+        send_json(handler, {"message": "Commande validée !", "status": "validated"})
+    except Exception as e:
+        send_error(handler, str(e), 500)
+    finally:
+        conn.close()
+
 def handle_update_delivery_status(handler, order_id):
     user = get_current_user_from_request(handler)
     if not user or user['role'] != 'admin':
@@ -851,9 +870,11 @@ def handle_update_delivery_status(handler, order_id):
         return send_error(handler, f"Statut invalide. Valeurs: {', '.join(order_flow)}")
     conn = get_db_connection()
     try:
-        current = conn.execute("SELECT delivery_status FROM orders WHERE id = ?", (order_id,)).fetchone()
+        current = conn.execute("SELECT status, delivery_status FROM orders WHERE id = ?", (order_id,)).fetchone()
         if not current:
             return send_error(handler, "Commande introuvable.", 404)
+        if current['status'] != 'validated':
+            return send_error(handler, "La commande doit d'abord être validée par l'administrateur.")
         current_idx = order_flow.index(current['delivery_status'])
         new_idx = order_flow.index(delivery_status)
         if new_idx <= current_idx:
@@ -936,7 +957,7 @@ def handle_create_order(handler):
             return send_error(handler, pay_res.get('error', "Échec de l'initialisation du paiement."))
             
         ussd_code = pay_res.get('ussd_code')
-        order_status = 'pending' if ussd_code else 'paid'
+        order_status = 'pending_validation'
         
         # 3. Create Order with delivery info
         cursor = conn.cursor()
@@ -1340,7 +1361,7 @@ def handle_reserve_ticket(handler):
                 (user['id'], total_price, payment_method, pay_res.get('transaction_id'), 'pending')
             )
         qr_token = str(uuid.uuid4())
-        ticket_status = 'pending_payment' if (pay_res and pay_res.get('ussd_code')) else 'confirmed'
+        ticket_status = 'pending_payment' if (pay_res and pay_res.get('ussd_code')) else 'pending_validation'
         cursor = conn.cursor()
         cursor.execute(
             "INSERT INTO tickets (event_id, user_id, quantity, total_price, qr_token, ticket_type, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -1405,6 +1426,43 @@ def handle_cancel_ticket(handler, ticket_id):
         conn.close()
 
 
+def handle_validate_ticket(handler, ticket_id):
+    user = get_current_user_from_request(handler)
+    if not user or user['role'] != 'admin':
+        return send_error(handler, "Accès interdit.", 403)
+    conn = get_db_connection()
+    try:
+        ticket = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+        if not ticket:
+            return send_error(handler, "Ticket introuvable.", 404)
+        if ticket['status'] != 'pending_validation':
+            return send_error(handler, f"Statut invalide. Statut actuel: {ticket['status']}")
+        conn.execute("UPDATE tickets SET status = 'confirmed' WHERE id = ?", (ticket_id,))
+        conn.commit()
+        send_json(handler, {"message": "Ticket validé !", "status": "confirmed"})
+    except Exception as e:
+        send_error(handler, str(e), 500)
+    finally:
+        conn.close()
+
+def handle_admin_get_tickets(handler):
+    user = get_current_user_from_request(handler)
+    if not user or user['role'] != 'admin':
+        return send_error(handler, "Accès interdit.", 403)
+    conn = get_db_connection()
+    try:
+        tickets = conn.execute(
+            """SELECT t.*, e.title as event_title, e.event_date, u.fullname as user_name
+               FROM tickets t JOIN events e ON t.event_id = e.id
+               JOIN users u ON t.user_id = u.id
+               ORDER BY t.created_at DESC LIMIT 100"""
+        ).fetchall()
+        send_json(handler, [dict(t) for t in tickets])
+    except Exception as e:
+        send_error(handler, str(e), 500)
+    finally:
+        conn.close()
+
 def handle_verify_ticket(handler):
     user = get_current_user_from_request(handler)
     if not user or user['role'] not in ('admin', 'scanner'):
@@ -1425,6 +1483,8 @@ def handle_verify_ticket(handler):
             return send_json(handler, {"valid": False, "message": "Ce ticket a été annulé.", "ticket": dict(ticket)}, 200)
         if ticket['status'] == 'used':
             return send_json(handler, {"valid": False, "message": "Ce ticket a déjà été utilisé.", "ticket": dict(ticket)}, 200)
+        if ticket['status'] == 'pending_validation':
+            return send_json(handler, {"valid": False, "message": "Ce ticket est en attente de validation par l'administrateur.", "ticket": dict(ticket)}, 200)
         user_info = conn.execute("SELECT fullname, email FROM users WHERE id = ?", (ticket['user_id'],)).fetchone()
         return send_json(handler, {
             "valid": True,
@@ -1525,12 +1585,17 @@ def dispatch_api_request(handler):
         elif re.match(r'^/api/orders/(\d+)/delivery$', parsed_path) and method == 'PUT':
             order_id = re.match(r'^/api/orders/(\d+)/delivery$', parsed_path).group(1)
             return handle_update_delivery_status(handler, order_id)
+        elif re.match(r'^/api/orders/(\d+)/validate$', parsed_path) and method == 'POST':
+            order_id = re.match(r'^/api/orders/(\d+)/validate$', parsed_path).group(1)
+            return handle_validate_order(handler, order_id)
             
         # 7. Admin
         elif parsed_path == '/api/admin/stats' and method == 'GET':
             return handle_admin_get_stats(handler)
         elif parsed_path == '/api/admin/orders' and method == 'GET':
             return handle_admin_get_orders(handler)
+        elif parsed_path == '/api/admin/tickets' and method == 'GET':
+            return handle_admin_get_tickets(handler)
         elif parsed_path == '/api/admin/users' and method == 'GET':
             return handle_admin_get_users(handler)
         # Match /api/admin/users/<id>
@@ -1563,6 +1628,9 @@ def dispatch_api_request(handler):
         elif re.match(r'^/api/tickets/(\d+)/cancel$', parsed_path) and method == 'POST':
             ticket_id = re.match(r'^/api/tickets/(\d+)/cancel$', parsed_path).group(1)
             return handle_cancel_ticket(handler, ticket_id)
+        elif re.match(r'^/api/tickets/(\d+)/validate$', parsed_path) and method == 'POST':
+            ticket_id = re.match(r'^/api/tickets/(\d+)/validate$', parsed_path).group(1)
+            return handle_validate_ticket(handler, ticket_id)
         elif parsed_path == '/api/tickets/verify' and method == 'POST':
             return handle_verify_ticket(handler)
                 

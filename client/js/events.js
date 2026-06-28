@@ -46,7 +46,7 @@ const Events = {
                                                 ${t.quantity} ticket(s) — ${formatPrice(t.total_price)}
                                                 ${isVip ? '<span class="badge badge-gold">VIP</span>' : ''}
                                             </p>
-                                            <span class="badge ${t.status === 'confirmed' ? 'badge-success' : 'badge-warning'}">${t.status === 'confirmed' ? 'Confirmé' : t.status}</span>
+                                            <span class="badge ${t.status === 'confirmed' ? 'badge-success' : 'badge-warning'}">${t.status === 'confirmed' ? 'Confirmé' : t.status === 'pending_validation' ? 'En attente de validation' : t.status === 'pending_payment' ? 'Paiement en attente' : t.status}</span>
                                         </div>
                                         <div class="d-flex flex-column align-items-center gap-1">
                                             <i class="fas fa-qrcode fa-2x text-muted" style="cursor:pointer;" onclick="Events.showTicketQR(${t.id})" title="Voir QR code"></i>
