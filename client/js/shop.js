@@ -278,20 +278,45 @@ const Shop = {
         const mapContainer = document.getElementById('checkout-map');
         if (!mapContainer || this.checkoutMap) return;
 
-        // Center on Morondava by default
+        // Default: center on Antsirabe
+        const defaultLat = -19.866;
+        const defaultLng = 47.033;
+        const zoom = 13;
+
         this.checkoutMap = L.map('checkout-map', {
             zoomControl: true,
             scrollWheelZoom: true
-        }).setView([-20.288, 44.283], 13);
+        }).setView([defaultLat, defaultLng], zoom);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors',
             maxZoom: 18
         }).addTo(this.checkoutMap);
 
-        this.checkoutMarker = L.marker([-20.288, 44.283], { draggable: true }).addTo(this.checkoutMap);
-        document.getElementById('checkout-lat').value = -20.288;
-        document.getElementById('checkout-lng').value = 44.283;
+        this.checkoutMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(this.checkoutMap);
+        document.getElementById('checkout-lat').value = defaultLat;
+        document.getElementById('checkout-lng').value = defaultLng;
+        document.getElementById('checkout-address').placeholder = 'Votre adresse complète à Antsirabe';
+
+        // Try auto-detect position
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    this.checkoutMap.setView([lat, lng], zoom);
+                    this.checkoutMarker.setLatLng([lat, lng]);
+                    document.getElementById('checkout-lat').value = lat;
+                    document.getElementById('checkout-lng').value = lng;
+                    document.getElementById('checkout-address').placeholder = 'Votre adresse complète';
+                    Notify.show('Position détectée automatiquement.', 'info');
+                },
+                () => {
+                    console.log('Géolocalisation refusée ou indisponible. Position par défaut: Antsirabe.');
+                },
+                { enableHighAccuracy: true, timeout: 5000 }
+            );
+        }
 
         this.checkoutMap.on('click', (e) => {
             this.checkoutMarker.setLatLng(e.latlng);
