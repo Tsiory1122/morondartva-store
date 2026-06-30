@@ -7,9 +7,9 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from database import initialize_database
 from routes import dispatch_api_request
 
-PORT = 8000
-HTTPS_PORT = 8443
-HOST = '0.0.0.0'
+PORT = int(os.environ.get('PORT', 8000))
+HTTPS_PORT = int(os.environ.get('HTTPS_PORT', 8443))
+HOST = os.environ.get('HOST', '0.0.0.0')
 
 # SSL certificate paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
