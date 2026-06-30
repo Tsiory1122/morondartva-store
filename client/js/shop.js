@@ -322,16 +322,59 @@ const Shop = {
             this.checkoutMarker.setLatLng(e.latlng);
             document.getElementById('checkout-lat').value = e.latlng.lat;
             document.getElementById('checkout-lng').value = e.latlng.lng;
+            this.reverseGeocode(e.latlng.lat, e.latlng.lng);
         });
 
         this.checkoutMarker.on('dragend', () => {
             const pos = this.checkoutMarker.getLatLng();
             document.getElementById('checkout-lat').value = pos.lat;
             document.getElementById('checkout-lng').value = pos.lng;
+            this.reverseGeocode(pos.lat, pos.lng);
         });
 
         // Invalidate size after modal opens
         setTimeout(() => this.checkoutMap.invalidateSize(), 300);
+    },
+
+    async searchAddressOnMap() {
+        const address = document.getElementById('checkout-address').value.trim();
+        if (!address) {
+            Notify.show('Veuillez entrer une adresse.', 'warning');
+            return;
+        }
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`, {
+                headers: { 'User-Agent': 'Morondartva-Store/1.0' }
+            });
+            const data = await res.json();
+            if (data.length === 0) {
+                Notify.show('Adresse introuvable sur la carte.', 'error');
+                return;
+            }
+            const { lat, lon, display_name } = data[0];
+            const latlng = [parseFloat(lat), parseFloat(lon)];
+            this.checkoutMap.setView(latlng, 16);
+            this.checkoutMarker.setLatLng(latlng);
+            document.getElementById('checkout-lat').value = lat;
+            document.getElementById('checkout-lng').value = lon;
+            document.getElementById('checkout-address').value = display_name;
+        } catch (e) {
+            Notify.show('Erreur lors de la recherche de l\'adresse.', 'error');
+        }
+    },
+
+    async reverseGeocode(lat, lng) {
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`, {
+                headers: { 'User-Agent': 'Morondartva-Store/1.0' }
+            });
+            const data = await res.json();
+            if (data && data.display_name) {
+                document.getElementById('checkout-address').value = data.display_name;
+            }
+        } catch (e) {
+            // Silent fail – address stays as typed
+        }
     },
 
     getCartCount() {

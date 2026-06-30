@@ -46,13 +46,15 @@ const Events = {
                                                 ${t.quantity} ticket(s) — ${formatPrice(t.total_price)}
                                                 ${isVip ? '<span class="badge badge-gold">VIP</span>' : ''}
                                             </p>
-                                            <span class="badge ${t.status === 'confirmed' ? 'badge-success' : 'badge-warning'}">${t.status === 'confirmed' ? 'Confirmé' : t.status === 'pending_validation' ? 'En attente de validation' : t.status === 'pending_payment' ? 'Paiement en attente' : t.status}</span>
+                                            <span class="badge ${t.status === 'confirmed' ? 'badge-success' : 'badge-warning'}">${t.status === 'confirmed' ? 'Confirmé' : t.status === 'pending_validation' ? 'En attente de validation admin' : t.status === 'pending_payment' ? 'Paiement en attente' : t.status}</span>
+                                            ${t.payment_status === 'pending' && t.payment_id ? `<div class="mt-1"><span class="badge badge-warning">Paiement en attente</span></div>` : ''}
                                         </div>
                                         <div class="d-flex flex-column align-items-center gap-1">
                                             <i class="fas fa-qrcode fa-2x text-muted" style="cursor:pointer;" onclick="Events.showTicketQR(${t.id})" title="Voir QR code"></i>
                                             <button class="btn btn-outline-info btn-xs" onclick="Events.downloadTicketPDF(${t.id})" title="Télécharger PDF"><i class="fas fa-download"></i></button>
                                         </div>
                                     </div>
+                                    ${t.payment_status === 'pending' && t.payment_id ? `<button class="btn btn-info btn-xs mt-1 w-100" onclick="Events.confirmPayment(${t.payment_id}, ${t.id})"><i class="fas fa-check mr-1"></i>J'ai payé</button>` : ''}
                                     <button class="btn btn-outline-danger btn-xs mt-2 w-100" onclick="Events.cancelTicket(${t.id})"><i class="fas fa-times mr-1"></i>Annuler</button>
                                 </div>`;
                             }).join('')}
@@ -114,6 +116,16 @@ const Events = {
         }
 
         container.innerHTML = myTicketsHtml + eventsHtml;
+    },
+
+    async confirmPayment(paymentId, ticketId) {
+        try {
+            await API.post(`/payments/${paymentId}/confirm`, {});
+            Notify.show('Paiement confirmé ! En attente de validation par l\'administrateur.', 'success');
+            this.loadEvents();
+        } catch (e) {
+            Notify.show(e.message, 'error');
+        }
     },
 
     async cancelTicket(ticketId) {
@@ -259,7 +271,7 @@ const Events = {
                             <a href="#" id="ticket-ussd-dial-link" class="btn btn-info btn-sm"><i class="fas fa-phone-alt mr-1"></i> Composer</a>
                             <button id="ticket-ussd-copy-btn" class="btn btn-outline-info btn-sm"><i class="fas fa-copy mr-1"></i> Copier</button>
                         </div>
-                        <p class="text-xs text-muted mt-3">Après paiement, revenez voir vos tickets dans la section Événements.</p>
+                        <p class="text-xs text-muted mt-3">Après paiement, revenez voir vos tickets dans la section Événements. La réservation sera finalisée après validation par l'administrateur.</p>
                         <button class="btn btn-red btn-sm mt-2" onclick="Events.loadEvents(); Events.closeTicketPaymentModal();">Voir mes tickets</button>
                     </div>
                 </div>
@@ -298,7 +310,7 @@ const Events = {
                 };
             } else {
                 closeModal();
-                Notify.show('Réservation confirmée !', 'success');
+                Notify.show('Réservation en attente de validation par l\'administrateur.', 'success');
                 this.loadEvents();
                 setTimeout(() => {
                     this.showTicketConfirm(lastRes);
@@ -321,12 +333,13 @@ const Events = {
         const token = res.qr_token || '';
         const isVip = res.ticket_type === 'vip';
         content.innerHTML = `
-            <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-            <h3 class="text-glow-success mb-2">Réservation Confirmée !</h3>
+            <i class="fas fa-clock fa-4x text-warning mb-3"></i>
+            <h3 class="text-glow mb-2">Réservation en attente de validation</h3>
             <p class="text-sm text-muted mb-2">Ticket #${ticketId} ${isVip ? '<span class="badge badge-gold">VIP</span>' : ''}</p>
             <p class="text-sm text-muted mb-3">${res.event_title || ''} — ${res.quantity} ticket(s) — ${formatPrice(res.total_price)}</p>
+            <p class="text-sm text-warning mb-2"><i class="fas fa-shield-alt mr-1"></i> En attente de validation par l'administrateur</p>
             <div id="qrcode-container" class="mb-3" style="display:flex;justify-content:center;"></div>
-            <p class="text-xs text-muted">Présentez ce QR code à l'entrée de l'événement.</p>
+            <p class="text-xs text-muted">Une fois validé, présentez ce QR code à l'entrée de l'événement.</p>
             <div class="d-flex gap-2 justify-content-center mt-3">
                 <button class="btn btn-outline-info btn-sm" onclick="Events.downloadTicketPDFById('${ticketId}','${token}','${res.event_title || ''}','${res.quantity}','${res.total_price || 0}','${isVip ? 'vip' : 'normal'}')">
                     <i class="fas fa-download mr-1"></i> Télécharger PDF

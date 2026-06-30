@@ -292,24 +292,59 @@ const Auth = {
             return;
         }
 
-        const deliveryLabel = { 'pending': 'En attente', 'preparing': 'En préparation', 'shipped': 'Expédiée', 'delivered': 'Livrée' };
-        const deliveryBadge = { 'pending': 'badge-warning', 'preparing': 'badge-info', 'shipped': 'badge-primary', 'delivered': 'badge-success' };
+        const steps = [
+            { key: 'pending', label: 'En attente', icon: 'fa-hourglass' },
+            { key: 'preparing', label: 'En préparation', icon: 'fa-box' },
+            { key: 'shipped', label: 'Expédiée', icon: 'fa-truck' },
+            { key: 'delivered', label: 'Livrée', icon: 'fa-check-circle' }
+        ];
+        const stepKeys = steps.map(s => s.key);
+
+        function deliveryProgress(deliveryStatus) {
+            const curIdx = stepKeys.indexOf(deliveryStatus);
+            if (curIdx === -1) return '';
+            return `<div class="delivery-progress">
+                ${steps.map((s, i) => {
+                    let cls = '';
+                    let icon = `<i class="fas ${s.icon}"></i>`;
+                    if (i < curIdx) { cls = 'completed'; icon = '<i class="fas fa-check"></i>'; }
+                    else if (i === curIdx) cls = 'active';
+                    return `<div class="delivery-step ${cls}"><div class="delivery-step-circle">${icon}</div><div class="delivery-step-label">${s.label}</div></div>`;
+                }).join('')}
+            </div>`;
+        }
 
         let ordersHTML = '';
         if (fullProfile.orders && fullProfile.orders.length > 0) {
-            ordersHTML = fullProfile.orders.map(order => `
+            ordersHTML = fullProfile.orders.map(order => {
+                const isPendingValidation = order.status === 'pending_validation';
+                return `
                 <div class="order-card card mb-3">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
                             <strong>Commande #${order.id}</strong>
                             <span class="text-muted text-sm ml-2">le ${new Date(order.created_at).toLocaleDateString('fr-FR')}</span>
                         </div>
-                        <div class="d-flex gap-2">
-                            <span class="badge ${deliveryBadge[order.delivery_status] || 'badge-warning'}">${deliveryLabel[order.delivery_status] || order.delivery_status}</span>
-                            <span class="badge ${order.status === 'paid' ? 'badge-success' : 'badge-warning'}">${order.status === 'paid' ? 'Payée' : order.status}</span>
+                        <span class="badge ${order.status === 'validated' ? 'badge-success' : order.status === 'paid' ? 'badge-success' : 'badge-warning'}">${isPendingValidation ? 'En attente de validation' : order.status === 'validated' ? 'Validée' : order.status === 'paid' ? 'Payée' : order.status}</span>
+                    </div>
+                    ${isPendingValidation ? `
+                    <div class="card-body">
+                        <div class="text-center py-3">
+                            <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                            <p class="mb-0">Votre commande est en attente de validation par l'administrateur.</p>
+                            <p class="text-muted text-sm mt-1">Vous serez notifié dès qu'elle sera confirmée.</p>
+                            ${order.payment_status === 'pending' && order.payment_id ? `
+                            <button class="btn btn-info btn-sm mt-2" onclick="Auth.confirmOrderPayment(${order.payment_id})">
+                                <i class="fas fa-credit-card mr-1"></i> J'ai payé
+                            </button>
+                            ` : ''}
                         </div>
                     </div>
-                    <div class="card-body">
+                    ` : `
+                    <div class="px-3 pt-2">
+                        ${deliveryProgress(order.delivery_status)}
+                    </div>
+                    <div class="card-body pt-0">
                         <div class="row">
                             <div class="col-md-8">
                                 <div class="order-items-list">
@@ -332,8 +367,9 @@ const Auth = {
                             </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                    `}
+                </div>`;
+            }).join('');
         } else {
             ordersHTML = `
                 <div class="text-center py-4 bg-dark-card rounded">
@@ -437,6 +473,16 @@ const Auth = {
                 </div>
             </div>
         `;
+    },
+
+    async confirmOrderPayment(paymentId) {
+        try {
+            await API.post(`/payments/${paymentId}/confirm`, {});
+            Notify.show('Paiement confirmé ! En attente de validation par l\'administrateur.', 'success');
+            this.updateProfilePage();
+        } catch (e) {
+            Notify.show(e.message, 'error');
+        }
     }
 };
 

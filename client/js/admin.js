@@ -624,9 +624,12 @@ const Admin = {
         container.innerHTML = `
             <div class="table-responsive">
                 <table class="table table-dark align-middle">
-                    <thead><tr><th>ID</th><th>Client</th><th>Total</th><th>Statut</th><th>Livraison</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>ID</th><th>Client</th><th>Total</th><th>Statut</th><th>Paiement</th><th>Livraison</th><th>Actions</th></tr></thead>
                     <tbody>
                         ${this.adminOrders.map(o => {
+                            const ps = o.payment_status || 'none';
+                            const payBadge = ps === 'completed' ? 'badge-success' : ps === 'pending' ? 'badge-warning' : 'badge-secondary';
+                            const payLabel = ps === 'completed' ? 'Payé' : ps === 'pending' ? 'En attente' : 'Aucun';
                             const needsValidation = o.status === 'pending_validation' || (o.status === 'pending' && o.delivery_status === 'pending');
                             if (needsValidation) {
                                 return `
@@ -635,6 +638,7 @@ const Admin = {
                                     <td>${o.user_name || o.user_id}</td>
                                     <td>${formatPrice(o.total_amount)}</td>
                                     <td><span class="badge badge-warning">En attente de validation</span></td>
+                                    <td><span class="badge ${payBadge}">${payLabel}</span></td>
                                     <td>—</td>
                                     <td>
                                         <button class="btn btn-success btn-sm" onclick="Admin.validateOrder(${o.id})">
@@ -652,6 +656,7 @@ const Admin = {
                                 <td>${o.user_name || o.user_id}</td>
                                 <td>${formatPrice(o.total_amount)}</td>
                                 <td><span class="badge ${statusBadge}">${statusLabel}</span></td>
+                                <td><span class="badge ${payBadge}">${payLabel}</span></td>
                                 <td><span class="badge ${db[o.delivery_status] || 'badge-warning'}">${dl[o.delivery_status] || o.delivery_status}</span></td>
                                 <td>
                                     <select class="form-control form-control-sm text-xs bg-dark inline-select" onchange="Admin.updateDeliveryStatus(${o.id}, this.value)" style="width:130px;">
@@ -724,7 +729,7 @@ const Admin = {
         container.innerHTML = `
             <div class="table-responsive">
                 <table class="table table-dark align-middle">
-                    <thead><tr><th>ID</th><th>Client</th><th>Événement</th><th>Places</th><th>Type</th><th>Statut</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>ID</th><th>Client</th><th>Événement</th><th>Places</th><th>Type</th><th>Statut</th><th>Paiement</th><th>Actions</th></tr></thead>
                     <tbody>
                         ${this.adminTickets.map(t => {
                             const statusLabels = {
@@ -742,6 +747,9 @@ const Admin = {
                                 'cancelled': 'badge-danger'
                             };
                             const showValidate = t.status === 'pending_validation';
+                            const ps = t.payment_status || 'none';
+                            const payBadge = ps === 'completed' ? 'badge-success' : ps === 'pending' ? 'badge-warning' : 'badge-secondary';
+                            const payLabel = ps === 'completed' ? 'Payé' : ps === 'pending' ? 'En attente' : 'Aucun';
                             return `
                             <tr class="${showValidate ? 'border-warning' : ''}">
                                 <td>#${t.id}</td>
@@ -750,6 +758,7 @@ const Admin = {
                                 <td>${t.quantity}</td>
                                 <td>${t.ticket_type === 'vip' ? '<span class="badge badge-gold">VIP</span>' : 'Normal'}</td>
                                 <td><span class="badge ${statusBadges[t.status] || 'badge-warning'}">${statusLabels[t.status] || t.status}</span></td>
+                                <td><span class="badge ${payBadge}">${payLabel}</span></td>
                                 <td>
                                     ${showValidate ? `<button class="btn btn-success btn-sm" onclick="Admin.validateTicket(${t.id})">
                                         <i class="fas fa-check mr-1"></i> Valider

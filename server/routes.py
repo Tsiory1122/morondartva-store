@@ -821,12 +821,13 @@ def handle_get_orders(handler):
     try:
         total = conn.execute("SELECT COUNT(*) FROM orders WHERE user_id = ?", (user['id'],)).fetchone()[0]
         orders_db = conn.execute(
-            "SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            "SELECT o.*, p.id as payment_id, p.status as payment_status FROM orders o LEFT JOIN payments p ON p.order_id = o.id WHERE o.user_id = ? ORDER BY o.created_at DESC LIMIT ? OFFSET ?",
             (user['id'], limit, offset)
         ).fetchall()
         orders = []
         for o in orders_db:
             o_dict = dict(o)
+            o_dict['payment_status'] = o_dict.get('payment_status') or 'none'
             items_db = conn.execute(
                 "SELECT oi.*, p.name as product_name, p.image_url FROM order_items oi JOIN products p ON oi.product_id = p.id WHERE oi.order_id = ?",
                 (o_dict['id'],)
@@ -1025,12 +1026,20 @@ def handle_admin_get_orders(handler):
     try:
         total = conn.execute("SELECT COUNT(*) FROM orders").fetchone()[0]
         orders_db = conn.execute(
-            """SELECT o.*, u.fullname as user_name, u.email as user_email
-               FROM orders o JOIN users u ON o.user_id = u.id
+            """SELECT o.*, u.fullname as user_name, u.email as user_email,
+                      p.id as payment_id, p.status as payment_status, p.payment_method as pm_method
+               FROM orders o
+               JOIN users u ON o.user_id = u.id
+               LEFT JOIN payments p ON p.order_id = o.id
                ORDER BY o.created_at DESC LIMIT ? OFFSET ?""",
             (limit, offset)
         ).fetchall()
-        send_json(handler, {"data": [dict(o) for o in orders_db], "total": total, "page": page, "total_pages": max(1, -(-total // limit))})
+        orders = []
+        for o in orders_db:
+            o_dict = dict(o)
+            o_dict['payment_status'] = o_dict.get('payment_status') or 'none'
+            orders.append(o_dict)
+        send_json(handler, {"data": orders, "total": total, "page": page, "total_pages": max(1, -(-total // limit))})
     except Exception as e:
         send_error(handler, str(e), 500)
     finally:
@@ -1308,12 +1317,20 @@ def handle_get_tickets(handler):
     conn = get_db_connection()
     try:
         tickets = conn.execute(
-            """SELECT t.*, e.title as event_title, e.event_date as event_date
-               FROM tickets t JOIN events e ON t.event_id = e.id
+            """SELECT t.*, e.title as event_title, e.event_date as event_date,
+                      p.id as payment_id, p.status as payment_status
+               FROM tickets t
+               JOIN events e ON t.event_id = e.id
+               LEFT JOIN payments p ON p.ticket_id = t.id
                WHERE t.user_id = ? ORDER BY t.created_at DESC""",
             (user['id'],)
         ).fetchall()
-        send_json(handler, [dict(t) for t in tickets])
+        tickets_list = []
+        for t in tickets:
+            t_dict = dict(t)
+            t_dict['payment_status'] = t_dict.get('payment_status') or 'none'
+            tickets_list.append(t_dict)
+        send_json(handler, tickets_list)
     except Exception as e:
         send_error(handler, str(e), 500)
     finally:
@@ -1356,18 +1373,19 @@ def handle_reserve_ticket(handler):
                 pay_res = payment.initiate_card_payment(total_price, "tok_simulated", 0)
             if not pay_res or not pay_res.get('success'):
                 return send_error(handler, pay_res.get('error', "Échec de l'initialisation du paiement."))
-            conn.execute(
-                "INSERT INTO payments (user_id, amount, payment_method, transaction_id, status) VALUES (?, ?, ?, ?, ?)",
-                (user['id'], total_price, payment_method, pay_res.get('transaction_id'), 'pending')
-            )
         qr_token = str(uuid.uuid4())
-        ticket_status = 'pending_payment' if (pay_res and pay_res.get('ussd_code')) else 'pending_validation'
+        ticket_status = 'pending_validation'
         cursor = conn.cursor()
         cursor.execute(
             "INSERT INTO tickets (event_id, user_id, quantity, total_price, qr_token, ticket_type, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (event_id, user['id'], quantity, total_price, qr_token, ticket_type, ticket_status)
         )
         ticket_id = cursor.lastrowid
+        if pay_res:
+            cursor.execute(
+                "INSERT INTO payments (ticket_id, user_id, amount, payment_method, transaction_id, status) VALUES (?, ?, ?, ?, ?, ?)",
+                (ticket_id, user['id'], total_price, payment_method, pay_res.get('transaction_id'), 'pending')
+            )
         if ticket_type == 'vip':
             cursor.execute("UPDATE events SET vip_available = vip_available - ? WHERE id = ?", (quantity, event_id))
         else:
@@ -1386,9 +1404,9 @@ def handle_reserve_ticket(handler):
             response_data["ussd_code"] = pay_res["ussd_code"]
             response_data["instruction"] = pay_res.get('instruction', f"Composez {pay_res['ussd_code']} sur votre téléphone.")
             response_data["transaction_id"] = pay_res.get('transaction_id')
-            response_data["message"] = "Réservation en attente de paiement. Composez le code USSD pour confirmer."
+            response_data["message"] = "Réservation en attente de paiement. Composez le code USSD pour confirmer. La réservation sera finalisée après validation par l'administrateur."
         else:
-            response_data["message"] = "Réservation confirmée !"
+            response_data["message"] = "Réservation en attente de validation par l'administrateur."
         send_json(handler, response_data, 201)
     except Exception as e:
         conn.rollback()
@@ -1452,12 +1470,20 @@ def handle_admin_get_tickets(handler):
     conn = get_db_connection()
     try:
         tickets = conn.execute(
-            """SELECT t.*, e.title as event_title, e.event_date, u.fullname as user_name
-               FROM tickets t JOIN events e ON t.event_id = e.id
+            """SELECT t.*, e.title as event_title, e.event_date, u.fullname as user_name,
+                      p.id as payment_id, p.status as payment_status
+               FROM tickets t
+               JOIN events e ON t.event_id = e.id
                JOIN users u ON t.user_id = u.id
+               LEFT JOIN payments p ON p.ticket_id = t.id
                ORDER BY t.created_at DESC LIMIT 100"""
         ).fetchall()
-        send_json(handler, [dict(t) for t in tickets])
+        tickets_list = []
+        for t in tickets:
+            t_dict = dict(t)
+            t_dict['payment_status'] = t_dict.get('payment_status') or 'none'
+            tickets_list.append(t_dict)
+        send_json(handler, tickets_list)
     except Exception as e:
         send_error(handler, str(e), 500)
     finally:
@@ -1499,6 +1525,28 @@ def handle_verify_ticket(handler):
                 "username": user_info['fullname'] if user_info else "Inconnu"
             }
         }, 200)
+    except Exception as e:
+        send_error(handler, str(e), 500)
+    finally:
+        conn.close()
+
+
+def handle_confirm_payment(handler, payment_id):
+    user = get_current_user_from_request(handler)
+    if not user:
+        return send_error(handler, "Non authentifié.", 401)
+    conn = get_db_connection()
+    try:
+        payment = conn.execute("SELECT * FROM payments WHERE id = ?", (payment_id,)).fetchone()
+        if not payment:
+            return send_error(handler, "Paiement introuvable.", 404)
+        if payment['user_id'] != user['id'] and user['role'] != 'admin':
+            return send_error(handler, "Ce paiement ne vous appartient pas.", 403)
+        if payment['status'] == 'completed':
+            return send_error(handler, "Ce paiement est déjà confirmé.")
+        conn.execute("UPDATE payments SET status = 'completed' WHERE id = ?", (payment_id,))
+        conn.commit()
+        send_json(handler, {"message": "Paiement confirmé !", "payment_id": int(payment_id), "status": "completed"})
     except Exception as e:
         send_error(handler, str(e), 500)
     finally:
@@ -1633,6 +1681,11 @@ def dispatch_api_request(handler):
             return handle_validate_ticket(handler, ticket_id)
         elif parsed_path == '/api/tickets/verify' and method == 'POST':
             return handle_verify_ticket(handler)
+                
+        # 10. Payments
+        elif re.match(r'^/api/payments/(\d+)/confirm$', parsed_path) and method == 'POST':
+            payment_id = re.match(r'^/api/payments/(\d+)/confirm$', parsed_path).group(1)
+            return handle_confirm_payment(handler, payment_id)
                 
         # Route not matched
         send_error(handler, "Route introuvable.", 404)
