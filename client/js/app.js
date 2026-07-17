@@ -56,7 +56,8 @@ const App = {
             '#profile': 'section-profile',
             '#admin': 'section-admin',
             '#contact': 'section-contact',
-            '#scanner': 'section-scanner'
+            '#scanner': 'section-scanner',
+            '#setup': 'section-setup'
         };
 
         const targetSectionId = routes[hash] || 'section-home';
@@ -233,6 +234,25 @@ const App = {
         window.open(`https://wa.me/261326180018?text=${waText}`, '_blank');
         Notify.show('Message envoyé via WhatsApp !', 'success');
         document.getElementById('contact-form').reset();
+    },
+
+    async handleSetup(event) {
+        event.preventDefault();
+        const key = document.getElementById('setup-key').value.trim();
+        const fullname = document.getElementById('setup-fullname').value.trim();
+        const email = document.getElementById('setup-email').value.trim();
+        const password = document.getElementById('setup-password').value;
+        const msgEl = document.getElementById('setup-message');
+
+        msgEl.innerHTML = '<div class="spinner"></div>';
+
+        try {
+            const res = await API.post('/setup/create-admin', { setup_key: key, fullname, email, password });
+            msgEl.innerHTML = `<div class="alert alert-success">${res.message}</div>`;
+            document.getElementById('setup-form').reset();
+        } catch (e) {
+            msgEl.innerHTML = `<div class="alert alert-error">${e.message || 'Erreur lors de la création'}</div>`;
+        }
     }
 };
 

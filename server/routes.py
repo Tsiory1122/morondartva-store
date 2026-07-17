@@ -1553,6 +1553,46 @@ def handle_confirm_payment(handler, payment_id):
         conn.close()
 
 
+# --- SETUP ROUTE (création admin, protégée par clé secrète) ---
+
+def handle_setup_create_admin(handler):
+    body = read_json_body(handler)
+    email = body.get('email', '').strip().lower()
+    password = body.get('password', '')
+    fullname = body.get('fullname', '').strip()
+
+    if not email or not password or not fullname:
+        return send_error(handler, "Email, mot de passe et nom requis.")
+    if len(password) < 6:
+        return send_error(handler, "Le mot de passe doit contenir au moins 6 caractères.")
+
+    setup_key = os.environ.get("SETUP_SECRET_KEY", "")
+    provided_key = body.get('setup_key', '').strip()
+
+    if not setup_key:
+        return send_error(handler, "SETUP_SECRET_KEY non configuré sur le serveur.", 500)
+    if provided_key != setup_key:
+        return send_error(handler, "Clé de configuration invalide.", 403)
+
+    conn = get_db_connection()
+    try:
+        exists = conn.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+        if exists:
+            return send_error(handler, "Cet email est déjà utilisé.")
+        hashed = hash_password(password)
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO users (email, password_hash, fullname, role, subscription_status) VALUES (?, ?, ?, ?, ?)",
+            (email, hashed, fullname, "admin", "premium")
+        )
+        conn.commit()
+        send_json(handler, {"message": f"Compte administrateur '{fullname}' créé avec succès !"}, 201)
+    except Exception as e:
+        send_error(handler, f"Erreur: {str(e)}", 500)
+    finally:
+        conn.close()
+
+
 # ROUTING ENTRY POINT
 
 def dispatch_api_request(handler):
@@ -1686,7 +1726,11 @@ def dispatch_api_request(handler):
         elif re.match(r'^/api/payments/(\d+)/confirm$', parsed_path) and method == 'POST':
             payment_id = re.match(r'^/api/payments/(\d+)/confirm$', parsed_path).group(1)
             return handle_confirm_payment(handler, payment_id)
-                
+
+        # 11. Setup (création admin protégée)
+        elif parsed_path == '/api/setup/create-admin' and method == 'POST':
+            return handle_setup_create_admin(handler)
+
         # Route not matched
         send_error(handler, "Route introuvable.", 404)
     except Exception as e:
