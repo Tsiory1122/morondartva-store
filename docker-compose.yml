@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: morondartva-app
+    ports:
+      - "8000:8000"
+      - "8443:8443"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./database.db:/app/database.db
+      - ./server/cert.pem:/app/server/cert.pem
+      - ./server/key.pem:/app/server/key.pem
+    environment:
+      - DB_TYPE=${DB_TYPE:-sqlite}
+      - DATABASE_URL=${DATABASE_URL:-}
+      - HOST=0.0.0.0
+      - PORT=8000
+      - HTTPS_PORT=8443
+      - MVOLA_MERCHANT_PHONE=${MVOLA_MERCHANT_PHONE:-0345148152}
+      - ORANGE_MONEY_MERCHANT_PHONE=${ORANGE_MONEY_MERCHANT_PHONE:-0326180018}
+      - AIRTEL_MONEY_MERCHANT_PHONE=${AIRTEL_MONEY_MERCHANT_PHONE:-0330000000}
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: morondartva-db
+    environment:
+      - POSTGRES_DB=morondartva
+      - POSTGRES_USER=morondartva
+      - POSTGRES_PASSWORD=morondartva
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    profiles:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  pgdata:

@@ -1553,6 +1553,45 @@ def handle_confirm_payment(handler, payment_id):
         conn.close()
 
 
+# SETTINGS HANDLERS
+
+def handle_get_merchant_numbers(handler):
+    user = get_current_user_from_request(handler)
+    if not user or user['role'] != 'admin':
+        return send_error(handler, "Accès refusé.", 403)
+    conn = get_db_connection()
+    try:
+        rows = conn.execute("SELECT key, value FROM settings WHERE key LIKE '%merchant_phone'").fetchall()
+        settings = {row['key']: row['value'] for row in rows}
+        send_json(handler, settings)
+    except Exception as e:
+        send_error(handler, str(e), 500)
+    finally:
+        conn.close()
+
+
+def handle_update_merchant_numbers(handler):
+    user = get_current_user_from_request(handler)
+    if not user or user['role'] != 'admin':
+        return send_error(handler, "Accès refusé.", 403)
+    data = read_json_body(handler)
+    conn = get_db_connection()
+    try:
+        for key in ('mvola_merchant_phone', 'orange_money_merchant_phone', 'airtel_money_merchant_phone'):
+            if key in data:
+                conn.execute(
+                    "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+                    (key, data[key])
+                )
+        conn.commit()
+        send_json(handler, {"message": "Numéros mis à jour avec succès."})
+    except Exception as e:
+        conn.rollback()
+        send_error(handler, str(e), 500)
+    finally:
+        conn.close()
+
+
 # ROUTING ENTRY POINT
 
 def dispatch_api_request(handler):
@@ -1682,11 +1721,17 @@ def dispatch_api_request(handler):
         elif parsed_path == '/api/tickets/verify' and method == 'POST':
             return handle_verify_ticket(handler)
                 
-        # 10. Payments
+        # 10. Settings (admin only)
+        elif parsed_path == '/api/settings/merchant-numbers' and method == 'GET':
+            return handle_get_merchant_numbers(handler)
+        elif parsed_path == '/api/settings/merchant-numbers' and method == 'PUT':
+            return handle_update_merchant_numbers(handler)
+
+        # 11. Payments
         elif re.match(r'^/api/payments/(\d+)/confirm$', parsed_path) and method == 'POST':
             payment_id = re.match(r'^/api/payments/(\d+)/confirm$', parsed_path).group(1)
             return handle_confirm_payment(handler, payment_id)
-                
+            
         # Route not matched
         send_error(handler, "Route introuvable.", 404)
     except Exception as e:

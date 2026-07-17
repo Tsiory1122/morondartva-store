@@ -4,17 +4,28 @@ import urllib.parse
 import json
 import uuid
 
-# --- MERCHANT PHONE NUMBERS (configurable via variables d'environnement) ---
-MVOLA_MERCHANT_PHONE = os.environ.get("MVOLA_MERCHANT_PHONE", "0345148152")
-ORANGE_MONEY_MERCHANT_PHONE = os.environ.get("ORANGE_MONEY_MERCHANT_PHONE", "0326180018")
-AIRTEL_MONEY_MERCHANT_PHONE = os.environ.get("AIRTEL_MONEY_MERCHANT_PHONE", "0330000000")
-
 # --- USSD CODES ---
-# (num) = numéro du marchand, (solde) = montant à payer
 MVOLA_USSD_TEMPLATE = "#111*1*2*{phone}*{amount}*2*47#"
 ORANGE_MONEY_USSD_TEMPLATE = "#144*11*{phone}*{phone}*{amount}*2#"
 AIRTEL_MONEY_USSD_TEMPLATE = "*436*2*1*1*{phone}*{amount}*2#"
 
+_DEFAULT_PHONES = {
+    "mvola_merchant_phone": "0345148152",
+    "orange_money_merchant_phone": "0326180018",
+    "airtel_money_merchant_phone": "0330000000",
+}
+
+def _get_merchant_phone(key: str) -> str:
+    try:
+        from database import get_db_connection
+        conn = get_db_connection()
+        row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+        conn.close()
+        if row:
+            return row['value']
+    except Exception:
+        pass
+    return os.environ.get(key.upper(), _DEFAULT_PHONES[key])
 
 def _format_ussd(template: str, phone: str, amount: float) -> str:
     amount_int = int(amount)
@@ -22,7 +33,8 @@ def _format_ussd(template: str, phone: str, amount: float) -> str:
 
 
 def initiate_mvola_payment(amount: float, phone: str, order_id: int) -> dict:
-    ussd = _format_ussd(MVOLA_USSD_TEMPLATE, MVOLA_MERCHANT_PHONE, amount)
+    merchant_phone = _get_merchant_phone("mvola_merchant_phone")
+    ussd = _format_ussd(MVOLA_USSD_TEMPLATE, merchant_phone, amount)
     txn_id = f"MV-{uuid.uuid4().hex[:12].upper()}"
     print(f"[MVOLA] Paiement initié pour Commande #{order_id} | Montant: Ar {amount} | Tél: {phone}")
     print(f"[MVOLA] Code USSD à composer: {ussd}")
@@ -37,7 +49,8 @@ def initiate_mvola_payment(amount: float, phone: str, order_id: int) -> dict:
 
 
 def initiate_orange_money_payment(amount: float, phone: str, order_id: int) -> dict:
-    ussd = _format_ussd(ORANGE_MONEY_USSD_TEMPLATE, ORANGE_MONEY_MERCHANT_PHONE, amount)
+    merchant_phone = _get_merchant_phone("orange_money_merchant_phone")
+    ussd = _format_ussd(ORANGE_MONEY_USSD_TEMPLATE, merchant_phone, amount)
     txn_id = f"OM-{uuid.uuid4().hex[:12].upper()}"
     print(f"[ORANGE MONEY] Paiement initié pour Commande #{order_id} | Montant: Ar {amount} | Tél: {phone}")
     print(f"[ORANGE MONEY] Code USSD à composer: {ussd}")
@@ -52,7 +65,8 @@ def initiate_orange_money_payment(amount: float, phone: str, order_id: int) -> d
 
 
 def initiate_airtel_money_payment(amount: float, phone: str, order_id: int) -> dict:
-    ussd = _format_ussd(AIRTEL_MONEY_USSD_TEMPLATE, AIRTEL_MONEY_MERCHANT_PHONE, amount)
+    merchant_phone = _get_merchant_phone("airtel_money_merchant_phone")
+    ussd = _format_ussd(AIRTEL_MONEY_USSD_TEMPLATE, merchant_phone, amount)
     txn_id = f"AM-{uuid.uuid4().hex[:12].upper()}"
     print(f"[AIRTEL MONEY] Paiement initié pour Commande #{order_id} | Montant: Ar {amount} | Tél: {phone}")
     print(f"[AIRTEL MONEY] Code USSD à composer: {ussd}")

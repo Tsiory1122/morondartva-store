@@ -186,6 +186,13 @@ def initialize_database():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_payments_ticket_id ON payments(ticket_id);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_purchased_videos_user_id ON purchased_videos(user_id);")
+    cursor.execute(f"""
+    CREATE TABLE IF NOT EXISTS settings (
+        key {text_type} PRIMARY KEY,
+        value {text_type} NOT NULL
+    );
+    """)
+
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tickets_event_id ON tickets(event_id);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_tickets_user_id ON tickets(user_id);")
 
@@ -283,6 +290,19 @@ def initialize_database():
         cursor.executemany(
             "INSERT INTO events (title, description, event_date, location, price, total_tickets, available_tickets, vip_price, vip_tickets, vip_available, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             events
+        )
+        conn.commit()
+
+    cursor.execute("SELECT COUNT(*) FROM settings")
+    if cursor.fetchone()[0] == 0:
+        default_settings = [
+            ("mvola_merchant_phone", "0345148152"),
+            ("orange_money_merchant_phone", "0326180018"),
+            ("airtel_money_merchant_phone", "0330000000"),
+        ]
+        cursor.executemany(
+            "INSERT INTO settings (key, value) VALUES (?, ?)",
+            default_settings
         )
         conn.commit()
 

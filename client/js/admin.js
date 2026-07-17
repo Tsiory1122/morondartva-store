@@ -503,6 +503,35 @@ const Admin = {
 
     // USERS MANAGEMENT
 
+    // SETTINGS (Merchant Numbers)
+
+    async loadSettings() {
+        try {
+            const settings = await API.get('/settings/merchant-numbers');
+            document.getElementById('setting-mvola').value = settings.mvola_merchant_phone || '';
+            document.getElementById('setting-orange').value = settings.orange_money_merchant_phone || '';
+            document.getElementById('setting-airtel').value = settings.airtel_money_merchant_phone || '';
+            document.getElementById('settings-status').innerHTML = '';
+        } catch (e) {
+            document.getElementById('settings-status').innerHTML = `<p class="text-danger">Erreur: ${e.message}</p>`;
+        }
+    },
+
+    async saveSettings() {
+        const payload = {
+            mvola_merchant_phone: document.getElementById('setting-mvola').value.trim(),
+            orange_money_merchant_phone: document.getElementById('setting-orange').value.trim(),
+            airtel_money_merchant_phone: document.getElementById('setting-airtel').value.trim(),
+        };
+        try {
+            const res = await API.put('/settings/merchant-numbers', payload);
+            Notify.show(res.message || 'Numéros mis à jour !', 'success');
+            document.getElementById('settings-status').innerHTML = `<p class="text-success">✓ Mis à jour</p>`;
+        } catch (e) {
+            Notify.show(e.message, 'error');
+        }
+    },
+
     async loadUsers() {
         const container = document.getElementById('admin-users-list');
         container.innerHTML = '<div class="text-center py-5"><div class="spinner"></div></div>';
@@ -954,11 +983,12 @@ const Admin = {
         } else if (tab === 'events') {
             this.initEventUploadZone();
             this.loadAdminEvents();
-    } else if (tab === 'orders') {
-        this.loadAdminOrders();
-    } else if (tab === 'tickets') {
-        this.loadAdminTickets();
-    } else if (tab === 'users') this.loadUsers();
+        } else if (tab === 'orders') {
+            this.loadAdminOrders();
+        } else if (tab === 'tickets') {
+            this.loadAdminTickets();
+        } else if (tab === 'users') this.loadUsers();
+        else if (tab === 'settings') this.loadSettings();
         else if (tab === 'scanner') {
             document.getElementById('scanner-result').classList.add('hidden');
         }
