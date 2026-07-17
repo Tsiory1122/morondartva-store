@@ -1,12 +1,13 @@
+import os
 import urllib.request
 import urllib.parse
 import json
 import uuid
 
-# --- MERCHANT PHONE NUMBERS (à remplacer par vos vrais numéros) ---
-MVOLA_MERCHANT_PHONE = "0340000000"
-ORANGE_MONEY_MERCHANT_PHONE = "0320000000"
-AIRTEL_MONEY_MERCHANT_PHONE = "0330000000"
+# --- MERCHANT PHONE NUMBERS (configurable via variables d'environnement) ---
+MVOLA_MERCHANT_PHONE = os.environ.get("MVOLA_MERCHANT_PHONE", "0345148152")
+ORANGE_MONEY_MERCHANT_PHONE = os.environ.get("ORANGE_MONEY_MERCHANT_PHONE", "0326180018")
+AIRTEL_MONEY_MERCHANT_PHONE = os.environ.get("AIRTEL_MONEY_MERCHANT_PHONE", "0330000000")
 
 # --- USSD CODES ---
 # (num) = numéro du marchand, (solde) = montant à payer
