@@ -235,8 +235,8 @@ def initialize_database():
 
     cursor.execute("SELECT COUNT(*) FROM users WHERE role = 'admin'")
     if cursor.fetchone()[0] == 0:
-        admin_email = "admin@morondartva.com"
-        admin_pass = hash_password("admin")
+        admin_email = "morondartva@gmail.com"
+        admin_pass = hash_password("1234morondartva")
         cursor.execute(
             "INSERT INTO users (email, password_hash, fullname, role, subscription_status) VALUES (?, ?, ?, ?, ?)",
             (admin_email, admin_pass, "Morondartva Admin", "admin", "premium")

@@ -55,8 +55,8 @@ morondava store/
 ## 3. Identifiants de Test
 
 Lors de l'initialisation automatique, la base de données crée un compte administrateur par défaut :
-*   **Email** : `admin@morondartva.com`
-*   **Mot de passe** : `admin`
+*   **Email** : `morondartva@gmail.com`
+*   **Mot de passe** : `1234morondartva`
 
 Vous pouvez également créer de nouveaux comptes utilisateurs directement depuis le bouton **Connexion -> Créer un compte** sur le site.
 
